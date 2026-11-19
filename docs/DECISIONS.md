@@ -6712,3 +6712,38 @@ No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de
 estrategia, selector, horizonte o dashboard. El bloque termina con el replay
 local verificado.
 
+
+## 2026-11-19 - replay rechaza resumenes incompletos del piloto
+
+Base publicada: `961257245a1d6c81f080a3b97a7706bbbdfea48a`, rama `fix/quote-tape-validity-coverage`.
+
+Se refuerza `replay_episodio_desde_corrida` en `scripts/quote_tape.py` para validar
+`resumen.json` antes de evaluar el episodio, sin aceptar resumenes incompletos
+ni ambiguos como evidencia de cobertura:
+
+1. La raiz del JSON debe ser un objeto y `cotizaciones_investigacion` tambien.
+   Una lista, cadena o valor invalido devuelve un resultado explicito con
+   `evaluable=False`, sin lanzar excepcion (`RESUMEN_AUSENTE` o
+   `RESUMEN_INVALIDO`).
+2. El `run_id` del resumen debe ser una cadena no vacia y coincidir con el de
+   la cinta y con el solicitado, si se proporciono. No se substituye un
+   `run_id` faltante con el del llamador; se conserva `RUN_ID_DISTINTO` cuando
+   los IDs existen pero no coinciden.
+3. `cap_reached` debe existir y ser un booleano JSON explicito.
+   Ausente, `null`, `0`, `1` y `"false"` son invalidos (`RESUMEN_INVALIDO`).
+   Solo `false` explicito acredita que no hubo agotamiento; `true` sin
+   instante verificable conserva el tratamiento `COBERTURA_UNKNOWN`.
+
+Se agregan pruebas focalizadas en `tests/test_quote_tape.py`: raiz en forma de
+lista, `run_id` del resumen faltante, `cap_reached` ausente y de tipos
+incorrectos (`null`, `0`, `1`, `"false"`) dejan el episodio no evaluable, y
+`cap_reached` falso explicito mantiene el episodio evaluable. Se conservan
+los controles positivos y los rechazos por ID distinto y corte conocido.
+
+`47 passed` en `tests/test_quote_tape.py`, `120 passed` en el bloque
+focalizado (`test_cotizaciones_local_piloto.py`,
+`test_operativo_capacidad_presupuesto`, `test_research_pilot`).
+
+No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de
+estrategia, selector, horizonte o dashboard. El bloque termina con el replay
+local verificado y resumenes incompletos rechazados.

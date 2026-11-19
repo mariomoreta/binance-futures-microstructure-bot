@@ -625,15 +625,16 @@ def replay_episodio_desde_corrida(
             resumen = json.loads(resumen_path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             resumen = None
-    if resumen is None:
-        # Resumen ausente o invalido: no se puede construir agotamiento, no
-        # se interpreta la ausencia como prueba de que la cinta nunca agoto.
+    if not isinstance(resumen, dict):
+        # Resumen ausente, no es JSON, o su raiz no es un objeto: no se puede
+        # construir agotamiento, no se interpreta como ausencia de
+        # agotamiento.
         return _resultado_no_evaluable(
             symbol, entrada_ms, salida_ms, lado, size,
             "RESUMEN_AUSENTE",
             max_edad_ms=max_edad_ms,
             detalle={"archivo": str(resumen_path),
-                     "razon": "resumen_json_ausente_o_invalido"})
+                     "razon": "resumen_json_no_es_objeto_o_esta_ausente"})
 
     cinta = resumen.get("cotizaciones_investigacion")
     if not isinstance(cinta, dict):
@@ -643,9 +644,16 @@ def replay_episodio_desde_corrida(
             max_edad_ms=max_edad_ms,
             detalle={"razon": "cotizaciones_investigacion_ausente_o_no_es_dict"})
 
-    # --- run_id: consistencia entre resumen y JSONL ----------------------
+    # --- run_id del resumen: cadena no vacia ------------------------------
     cinta_run_id = cinta.get("run_id")
+    if not isinstance(cinta_run_id, str) or not cinta_run_id:
+        return _resultado_no_evaluable(
+            symbol, entrada_ms, salida_ms, lado, size,
+            "RESUMEN_INVALIDO",
+            max_edad_ms=max_edad_ms,
+            detalle={"razon": "run_id_resumen_faltante_o_no_es_cadena_no_vacia"})
 
+    # --- Leer JSONL y sus run_ids -----------------------------------------
     filas: List[Dict[str, Any]] = []
     jsonl_run_ids: List[str] = []
     if tape_path.exists():
@@ -655,35 +663,50 @@ def replay_episodio_desde_corrida(
             filas = []
         for f in filas:
             rid = f.get("run_id")
-            if rid is not None:
+            if isinstance(rid, str) and rid:
                 jsonl_run_ids.append(rid)
 
-    if cinta_run_id is not None:
-        jsonl_run_ids.append(cinta_run_id)
-
-    # run_id efectivo para la consulta.
-    efectivo_run_id: Optional[str] = None
-    if run_id is not None:
-        efectivo_run_id = run_id
-    elif cinta_run_id is not None:
-        efectivo_run_id = cinta_run_id
-
-    # Comprobar que JSONL y resumen pertenecen al mismo run_id y que no hay
-    # run_ids ajenos mezclados en el JSONL cuando se solicita uno concreto.
-    if efectivo_run_id is not None:
-        ajenos = {r for r in jsonl_run_ids if r != efectivo_run_id}
+    # El run_id del resumen debe coincidir con el de la cinta (JSONL).
+    if jsonl_run_ids:
+        ajenos = {r for r in jsonl_run_ids if r != cinta_run_id}
         if ajenos:
             return _resultado_no_evaluable(
                 symbol, entrada_ms, salida_ms, lado, size,
                 "RUN_ID_DISTINTO",
                 max_edad_ms=max_edad_ms,
-                detalle={"run_id_solicitado": efectivo_run_id,
+                detalle={"run_id_solicitado": cinta_run_id,
                          "run_ids_ajenos_en_jsonl": sorted(ajenos)})
+
+    # El run_id del resumen debe coincidir con el solicitado, si se propuso.
+    if run_id is not None and run_id != cinta_run_id:
+        return _resultado_no_evaluable(
+            symbol, entrada_ms, salida_ms, lado, size,
+            "RUN_ID_DISTINTO",
+            max_edad_ms=max_edad_ms,
+            detalle={"run_id_solicitado": run_id,
+                     "run_id_resumen": cinta_run_id})
+
+    efectivo_run_id = cinta_run_id
+
+    # --- cap_reached: booleano JSON explicito -----------------------------
+    # No usar bool(): ausente, null, 0, 1 y "false" son invalidos. Solo
+    # false explícito acredita que no hubo agotamiento.
+    cap_reached_raw = cinta.get("cap_reached")
+    if cap_reached_raw is True:
+        cap_reached = True
+    elif cap_reached_raw is False:
+        cap_reached = False
+    else:
+        return _resultado_no_evaluable(
+            symbol, entrada_ms, salida_ms, lado, size,
+            "RESUMEN_INVALIDO",
+            max_edad_ms=max_edad_ms,
+            detalle={"razon": "cap_reached_no_es_booleano_json_explicito",
+                     "valor": cap_reached_raw})
 
     # --- Construir agotamiento a partir del resumen (el llamador no lo pasa
     #     a evaluar_episodio) --------------------------------------------
     agotamiento: Optional[Dict[str, Any]] = None
-    cap_reached = bool(cinta.get("cap_reached"))
     if cap_reached:
         cap_instante_ms = cinta.get("cap_instante_ms")
         try:

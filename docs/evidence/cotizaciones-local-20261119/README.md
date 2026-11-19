@@ -68,7 +68,14 @@ salida_ms, lado, size, run_id=...)` es la entrada pública de replay: lee
 `cotizaciones_investigacion.jsonl` y `resumen.json` del directorio de la
 corrida, comprueba que pertenecen al mismo `run_id`, construye internamente la
 evidencia de agotamiento (el llamador no la pasa) y reutiliza
-`evaluar_episodio()`. Conserva la entrada acreditada anterior al corte; desde
+`evaluar_episodio()`. Valida `resumen.json` antes de evaluar: la raiz y
+`cotizaciones_investigacion` deben ser objetos; el `run_id` del resumen debe
+ser una cadena no vacia que coincida con el de la cinta y con el solicitado (si
+se propoústo, sin substituir un faltante con el del llamador); `cap_reached`
+debe ser un booleano JSON explúcito (`True`/`False`), rechazando ausente,
+`null`, `0`, `1` y `"false"` como `RESUMEN_INVALIDO`. Solo `false`
+explúcito acredita que no hubo agotamiento; `true` sin instante verificable
+conserva `COBERTURA_UNKNOWN`. Conserva la entrada acreditada anterior al corte; desde
 el corte inclusive devuelve `LIMITE_ALCANZADO` aunque la ultima cita siga
 fresca y no haya cabido la marca final en el JSONL.
 
@@ -218,7 +225,7 @@ tope de bytes.
   run_id distinto no evaluable).
 - `scripts/generar_evidencia_cotizaciones_local.py`: regenera
   `C-evidencia.json` con el mismo recorrido deterministico.
-- Verificacion: `64 passed` en los dos archivos de prueba del registro.
+- Verificacion: `70 passed` en los dos archivos de prueba del registro.
 - Comandos: `python -m pytest tests\test_quote_tape.py tests\test_cotizaciones_local_piloto.py -q`
   y `python scripts\generar_evidencia_cotizaciones_local.py`.
 

@@ -501,6 +501,115 @@ class TestSeleccion(unittest.TestCase):
         self.assertFalse(ev["evaluable"])
         self.assertEqual(ev["motivo"], "RESUMEN_AUSENTE")
 
+    def test_replay_desde_corrida_raiz_no_es_objeto_no_evaluable(self):
+        """Raiz del resumen en forma de lista (no objeto): no evaluable,
+        sin lanzar excepcion."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / "resumen.json").write_text(
+                "[1, 2, 3]", encoding="utf-8")
+            (tmp / qt.NOMBRE_ARCHIVO).write_text(
+                "".join(json.dumps(r, sort_keys=True) + "\n" for r in filas),
+                encoding="utf-8")
+            ev = qt.replay_episodio_desde_corrida(
+                tmp, "AAAUSDT", 999_000, 999_500, "LONG",
+                qt.TAMANO_SIMULADO, run_id="a")
+        self.assertFalse(ev["evaluable"])
+        self.assertEqual(ev["motivo"], "RESUMEN_AUSENTE")
+
+    def test_replay_desde_corrida_run_id_resumen_faltante_no_evaluable(self):
+        """run_id del resumen faltante: no evaluable, sin sustituirlo por
+        el del llamador."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            self._escribir_corrida(tmp, filas, {
+                "cap_reached": False,  # sin run_id
+            })
+            ev = qt.replay_episodio_desde_corrida(
+                tmp, "AAAUSDT", 999_000, 999_500, "LONG",
+                qt.TAMANO_SIMULADO, run_id="a")
+        self.assertFalse(ev["evaluable"])
+        self.assertEqual(ev["motivo"], "RESUMEN_INVALIDO")
+
+    def test_replay_desde_corrida_cap_reached_ausente_no_evaluable(self):
+        """cap_reached ausente: no evaluable (no se interpreta como
+        ausencia de agotamiento)."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            self._escribir_corrida(tmp, filas, {
+                "run_id": "a",
+                # sin cap_reached
+            })
+            ev = qt.replay_episodio_desde_corrida(
+                tmp, "AAAUSDT", 999_000, 999_500, "LONG",
+                qt.TAMANO_SIMULADO, run_id="a")
+        self.assertFalse(ev["evaluable"])
+        self.assertEqual(ev["motivo"], "RESUMEN_INVALIDO")
+
+    def test_replay_desde_corrida_cap_reached_tipos_incorrectos_no_evaluables(self):
+        """cap_reached con valor null, 0, 1 o "false": no evaluable. Solo
+        false explícito acredita que no hubo agotamiento."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        for valor in (None, 0, 1, "false"):
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                self._escribir_corrida(tmp, filas, {
+                    "run_id": "a", "cap_reached": valor,
+                })
+                ev = qt.replay_episodio_desde_corrida(
+                    tmp, "AAAUSDT", 999_000, 999_500, "LONG",
+                    qt.TAMANO_SIMULADO, run_id="a")
+            self.assertFalse(ev["evaluable"], f"valor={valor!r}: {ev}")
+            self.assertEqual(ev["motivo"], "RESUMEN_INVALIDO", f"valor={valor!r}")
+
+    def test_replay_desde_corrida_cap_reached_false_explicito_evaluable(self):
+        """cap_reached false explícito: episodio evaluable normalmente
+        (no hubo agotamiento)."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_500_000, "event_ms": 1_500_000, "seq": 2,
+             "best_bid": 100.4, "best_ask": 100.6, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.5, "valida": True},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            self._escribir_corrida(tmp, filas, {
+                "run_id": "a", "cap_reached": False,
+            })
+            ev = qt.replay_episodio_desde_corrida(
+                tmp, "AAAUSDT", 999_000, 1_500_000, "LONG",
+                qt.TAMANO_SIMULADO, run_id="a")
+        self.assertTrue(ev["evaluable"], ev)
+        self.assertEqual(ev["precio_entrada"], 100.2)
+        self.assertEqual(ev["precio_salida"], 100.4)
+
 
 class TestEvaluacion(unittest.TestCase):
     def setUp(self):
