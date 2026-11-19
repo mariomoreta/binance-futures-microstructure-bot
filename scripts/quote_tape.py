@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -73,10 +74,10 @@ class QuoteTape:
         encoded = len(payload.encode("utf-8"))
         if not marca:
             if self.rows_written >= self.max_rows:
-                self._cerrar("limite_filas")
+                self._cerrar("limite_filas", received_ms=row.get("received_ms"))
                 return False
             if self.max_bytes and self.bytes_written + encoded > self.max_bytes:
-                self._cerrar("limite_bytes")
+                self._cerrar("limite_bytes", received_ms=row.get("received_ms"))
                 return False
         elif self.max_bytes and self.bytes_written + encoded > self.max_bytes:
             return False
@@ -94,7 +95,7 @@ class QuoteTape:
         self.bytes_written += encoded
         return True
 
-    def _cerrar(self, motivo: str) -> None:
+    def _cerrar(self, motivo: str, received_ms: Optional[int] = None) -> None:
         if self.cap_reached:
             return
         self.cap_reached = True
@@ -108,6 +109,7 @@ class QuoteTape:
                 "kind": "limite",
                 "version": VERSION,
                 "run_id": self.run_id,
+                "received_ms": int(received_ms or time.time() * 1000),
                 "motivo": motivo,
                 "filas_escritas": self.rows_written,
                 "bytes_escritos": self.bytes_written,
@@ -157,7 +159,14 @@ class QuoteTape:
     def record_quote(self, symbol: str, event_ms: int, received_ms: int,
                      features: Dict[str, Any], *, degraded: bool = False,
                      gap: bool = False, crossed: bool = False) -> bool:
-        """Guarda la primera punta aceptada de cada segundo de recepcion."""
+        """Guarda la primera punta aceptada de cada segundo de recepcion.
+
+        Una cotizacion valida en segundo X no se duplica dentro del mismo
+        segundo, pero una invalidacion posterior (rotacion, salto de
+        secuencia o perdida de calidad) dentro de ese mismo segundo SÍ se
+        escribe: el muestreo de una fila por segundo no debe ocultar que la
+        cobertura se rompio antes de cerrar el segundo.
+        """
         if self.cap_reached:
             return False
         try:
@@ -165,13 +174,15 @@ class QuoteTape:
             ev = int(event_ms)
             recv = int(received_ms)
             segundo = recv // self.cadencia_ms
-            if self._segundo_por_simbolo.get(sym) == segundo:
-                self.duplicated_seconds += 1
-                return False
+            mismo_segundo = self._segundo_por_simbolo.get(sym) == segundo
             feat = dict(features or {})
             if crossed:
                 feat["crossed"] = True
             motivos = self._finotos(feat, bool(degraded), bool(gap))
+            if mismo_segundo and not motivos:
+                # Duplicado valido dentro del mismo segundo: no se reescribe.
+                self.duplicated_seconds += 1
+                return False
             fila = {
                 "kind": "cotizacion",
                 "version": VERSION,
@@ -274,34 +285,46 @@ def _clave_orden(fila: Dict[str, Any]) -> Tuple[int, int, int]:
             int(fila.get("seq") or 0))
 
 
+def _motivo_invalido(fila: Dict[str, Any]) -> str:
+    """Extrae el primer codigo de invalidez de una fila cotizacion invalida."""
+    motivos = [str(m) for m in (fila.get("motivos_invalidez") or [])]
+    return motivos[0] if motivos else "CALIDAD_NO_VALIDA"
+
+
 def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
                 *, run_id: Optional[str] = None,
                 max_edad_ms: int = MAX_EDAD_MS) -> Dict[str, Any]:
-    """Ultima cotizacion valida ya recibida en ``instante_ms``.
+    """Ultimo estado de cobertura conocido en ``instante_ms``.
 
-    Devuelve ``cotizacion`` y ``motivo`` (None cuando hay cotizacion). Nunca
-    desplaza el instante y nunca usa una fila recibida despues de el.
+    Recorre las filas en orden cronologico hasta el instante y mantiene un
+    automa de cobertura: una cotizacion valida establece cobertura, una
+    invalidez (rotacion, salto de secuencia, perdida de calidad o fila
+    ``faltante``) la rompe, y solo una cotizacion valida posterior la
+    restablece. Nunca se retrocede a una cotizacion previa despues de una
+    invalidez. Nunca se usa una fila recibida despues del instante.
     """
     instante = int(instante_ms)
     simbolo = str(symbol).upper()
-    validas: List[Dict[str, Any]] = []
-    invalidas: List[Dict[str, Any]] = []
-    viejas: List[Dict[str, Any]] = []
-    futuras: List[Dict[str, Any]] = []
-    faltantes: List[Dict[str, Any]] = []
-    limites: List[Dict[str, Any]] = []
+
+    # Recopilar y ordenar cronologicamente todas las filas relevantes hasta T.
+    eventos: List[Tuple[int, int, int, Dict[str, Any]]] = []
+    futuras = 0
     for fila in filas:
         if run_id is not None and fila.get("run_id") != run_id:
             continue
         if fila.get("symbol") != simbolo:
-            continue
+            # Las filas 'limite' son globales (sin symbol) y aplican a todos
+            # los simbolos; no se filtran por symbol.
+            if fila.get("kind") != "limite":
+                continue
         kind = fila.get("kind")
         if kind in ("faltante", "limite"):
             try:
-                if int(fila.get("received_ms") or 0) <= instante:
-                    (faltantes if kind == "faltante" else limites).append(fila)
+                recv = int(fila.get("received_ms") or 0)
             except (TypeError, ValueError):
                 continue
+            if recv <= instante:
+                eventos.append((recv, 0, int(fila.get("seq") or 0), fila))
             continue
         if kind != "cotizacion":
             continue
@@ -311,50 +334,68 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
         except (KeyError, TypeError, ValueError):
             continue
         if recv > instante or ev > instante:
-            futuras.append(fila)
+            futuras += 1
             continue
-        if instante - ev > max_edad_ms:
-            viejas.append(fila)
-            continue
-        if fila.get("valida") is True:
-            validas.append(fila)
-        else:
-            invalidas.append(fila)
+        eventos.append((recv, ev, int(fila.get("seq") or 0), fila))
+    eventos.sort(key=lambda e: (e[0], e[1], e[2]))
 
-    if validas:
-        elegida = max(validas, key=_clave_orden)
-        return {"cotizacion": elegida, "motivo": None,
-                "candidatas": len(validas),
-                "rechazadas_posteriores": len(futuras),
-                "rechazadas_viejas": len(viejas)}
-    if faltantes:
-        ultima = max(faltantes, key=_clave_orden)
-        motivo = str(ultima.get("motivo") or "SIMBOLO_FUERA_DE_SEGUIMIENTO")
-        return {"cotizacion": None, "motivo": motivo.upper(),
-                "fila": ultima, "candidatas": 0,
-                "rechazadas_posteriores": len(futuras),
-                "rechazadas_viejas": len(viejas)}
-    if invalidas:
-        ultima = max(invalidas, key=_clave_orden)
-        motivos = [str(m) for m in (ultima.get("motivos_invalidez") or [])]
-        motivo = motivos[0] if motivos else "CALIDAD_NO_VALIDA"
-        return {"cotizacion": ultima, "motivo": motivo,
-                "candidatas": 0, "rechazadas_posteriores": len(futuras),
-                "rechazadas_viejas": len(viejas)}
-    if viejas:
-        return {"cotizacion": None, "motivo": "COTIZACION_VIEJA",
-                "candidatas": 0, "rechazadas_posteriores": len(futuras),
-                "rechazadas_viejas": len(viejas)}
+    # Automata de cobertura: estado actual al llegar al instante.
+    cotizacion_actual: Optional[Dict[str, Any]] = None
+    motivo_actual: Optional[str] = None
+    for _recv, _ev, _seq, fila in eventos:
+        kind = fila.get("kind")
+        if kind == "cotizacion":
+            if fila.get("valida") is True:
+                cotizacion_actual = fila
+                motivo_actual = None
+            else:
+                cotizacion_actual = None
+                motivo_actual = _motivo_invalido(fila)
+        elif kind == "faltante":
+            cotizacion_actual = None
+            motivo_actual = str(fila.get("motivo")
+                                or "SIMBOLO_FUERA_DE_SEGUIMIENTO").upper()
+        elif kind == "limite":
+            cotizacion_actual = None
+            motivo_actual = "LIMITE_ALCANZADO"
+
+    rech_viejas = 0
+    for _recv, ev, _seq, fila in eventos:
+        if fila.get("kind") == "cotizacion" and instante - int(fila["event_ms"]) > max_edad_ms:
+            rech_viejas += 1
+
+    if cotizacion_actual is not None:
+        ev = int(cotizacion_actual["event_ms"])
+        recv = int(cotizacion_actual["received_ms"])
+        if ev > instante or recv > instante:
+            return {"cotizacion": None, "motivo": "COTIZACION_FUTURA",
+                    "candidatas": 0,
+                    "rechazadas_posteriores": futuras,
+                    "rechazadas_viejas": rech_viejas}
+        if instante - ev > max_edad_ms:
+            return {"cotizacion": None, "motivo": "COTIZACION_VIEJA",
+                    "candidatas": 0,
+                    "rechazadas_posteriores": futuras,
+                    "rechazadas_viejas": rech_viejas}
+        return {"cotizacion": cotizacion_actual, "motivo": None,
+                "candidatas": 1,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas}
+
+    if motivo_actual is not None:
+        return {"cotizacion": None, "motivo": motivo_actual,
+                "candidatas": 0,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas}
+
     if futuras:
         return {"cotizacion": None, "motivo": "COTIZACION_FUTURA",
-                "candidatas": 0, "rechazadas_posteriores": len(futuras),
-                "rechazadas_viejas": 0}
-    if limites:
-        return {"cotizacion": None, "motivo": "LIMITE_ALCANZADO",
-                "fila": max(limites, key=_clave_orden), "candidatas": 0,
-                "rechazadas_posteriores": 0, "rechazadas_viejas": 0}
+                "candidatas": 0,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas}
     return {"cotizacion": None, "motivo": "SIN_COTIZACION",
-            "candidatas": 0, "rechazadas_posteriores": 0,
+            "candidatas": 0,
+            "rechazadas_posteriores": 0,
             "rechazadas_viejas": 0}
 
 

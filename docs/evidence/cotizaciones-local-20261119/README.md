@@ -28,7 +28,7 @@ solo la punta, cantidades visibles, timestamps y calidad.
 | --- | --- |
 | `cotizacion` | `kind`, `version`, `run_id`, `symbol`, `event_ms`, `received_ms`, `seq`, `best_bid`, `best_ask`, `bid_qty`, `ask_qty`, `bid_levels`, `ask_levels`, `mid`, `spread_bps`, `degraded`, `gap`, `crossed`, `valida`, `motivos_invalidez`, `cadencia_ms` |
 | `faltante` | los anteriores de identificacion mas `motivo`, `detalle` |
-| `limite` | `kind`, `version`, `run_id`, `seq`, `motivo`, `filas_escritas`, `bytes_escritos` |
+| `limite` | `kind`, `version`, `run_id`, `symbol`, `received_ms`, `seq`, `motivo`, `filas_escritas`, `bytes_escritos` |
 
 `event_ms` es la marca del evento y `received_ms` el reloj del piloto al
 procesarlo. `bid_qty` y `ask_qty` son las cantidades **en la punta**, no la suma
@@ -38,7 +38,9 @@ de los 20 niveles.
 
 - Una fila `cotizacion` por simbolo y **primer snapshot aceptado de cada segundo
   de recepcion** (`received_ms // 1000`); los demas snapshots del mismo segundo
-  se descuentan en `duplicated_seconds`. Cadencia: `1 000 ms`.
+  se descuentan en `duplicated_seconds`. Una cotizacion invalida dentro del
+  mismo segundo **sí** se escribe para registrar la ruptura de cobertura.
+  Cadencia: `1 000 ms`.
 - Una fila `faltante` al retirar un simbolo del seguimiento por rotacion
   (`simbolo_fuera_de_seguimiento`). No modifica el selector.
 - Una fila `limite` al alcanzar `max_rows` o `max_bytes`; desde entonces dejan
@@ -47,9 +49,12 @@ de los 20 niveles.
 ### Como se recupera
 
 `quote_tape.leer_tape(ruta)` lee el JSONL persistido. Para cada extremo,
-`seleccionar(symbol, instante, filas, run_id, max_edad_ms=5_000)` elige la ultima
-fila valida con `received_ms <= instante`, `event_ms <= instante` y
-`instante - event_ms <= 5 000 ms` (desempate: `received_ms`, `event_ms`, `seq`).
+`seleccionar(symbol, instante, filas, run_id, max_edad_ms=5_000)` mantiene un
+automa de cobertura en orden cronologico hasta el instante: una cotizacion
+valida establece cobertura; una invalidez (rotacion, salto de secuencia,
+perdida de calidad o fila `faltante`) la rompe; solo una cotizacion valida
+posterior la restablece. Nunca se retrocede a una cotizacion previa despues de
+una invalidez. Nunca se usa una fila recibida despues del instante.
 `evaluar_episodio(...)` compara los dos extremos. Nada se lee del estado en
 memoria ni del frontend. No se desplaza entrada ni salida para buscar precio.
 
@@ -103,6 +108,12 @@ Rotacion: al cambiar el conjunto seguido en `T0+2min` se escribieron 4 filas
 cualquiera de ellos devuelve `SIMBOLO_FUERA_DE_SEGUIMIENTO` con su fila como
 origen. No se inventa precio ni se altera la seleccion.
 
+Invalidez sin recuperacion: cotizacion valida seguida de salto de secuencia
+sin libro valido posterior -> salida no evaluable con motivo `SALTO_SECUENCIA`.
+Invalidez posterior al instante de entrada: no altera la cotizacion valida en
+entrada (la fila invalida es posterior a T y no se usa). Cinta agotada antes de
+la salida: `LIMITE_ALCANZADO`, distinguible de `SIN_COTIZACION`.
+
 ## 4. Topes, bytes y proyeccion
 
 - Topes declarados: `20 000` filas de datos y `4 194 304` bytes (4 MiB).
@@ -112,6 +123,13 @@ origen. No se inventa precio ni se altera la seleccion.
   `limite` con `limite_filas`, 5 observaciones del piloto escritas igualmente,
   salida limpia. Con `max_bytes=1` no se escribe ninguna cotizacion y el motivo
   es `limite_bytes`. El piloto no se detiene en ninguno de los dos casos.
+- Capacidad de la cinta: el tope que se agota PRIMERO (filas o bytes).
+  Con 4 MiB y 512 B/fila el techo teorico por bytes es 8 192 filas; con
+  20 simbolos a 1 fila/s son 409,6 s (~6 min 50 s) **antes de reservar espacio
+  para marcas**. El techo por filas es 20 000 filas (~16,67 min). Se usa el
+  minimo de ambos. Tras reservar espacio para filas de marca (una fila `limite`
+  global + hasta 2 filas `faltante` por simbolo por rotacion), las filas
+  efectivas son 8 151 y la cobertura es ~6,79 min con 20 simbolos a 1 s.
 - Proyeccion con el universo actual (`max_symbols=20`) y cadencia de 1 s:
 
 | configuracion | filas proyectadas | bytes proyectados | cobertura completa |
@@ -119,37 +137,50 @@ origen. No se inventa precio ni se altera la seleccion.
 | 10 min, 20 simbolos | 12 000 | 6 144 000 | no (excede 4 MiB) |
 | 4 h, 20 simbolos | 288 000 | 147 456 000 | no |
 
-Con 20 simbolos el tope de 20 000 filas cubre ~16.67 min. Ademas, el gate de
-presupuesto de la configuracion de 4 h **ya era insuficiente antes de anadir la
-cinta** (`134 153 272` bytes previstos frente al techo configurado). No se
-aumentaron cupos ni se relajo ningun presupuesto: la cinta respe ta el
-presupuesto general y se autolimita. La configuracion corta de 10 min con cinta
-si cierra el gate (`cabe_en_limites: true`) pero no llega a cubrir los 10 min
-completos por el tope de bytes.
+Con 20 simbolos, la cobertura efectiva de la cinta es ~6,79 min (limitada por
+bytes, no por filas). Los ~16,67 min corresponden solo al limite de filas y
+no son vinculantes. Ademas, el gate de presupuesto de la configuracion de
+4 h **ya era insuficiente antes de anadir la cinta** (`134 153 272` bytes
+previstos frente al techo configurado). No se aumentaron cupos ni se relajo
+ningun presupuesto: la cinta respeta el presupuesto general y se autolimita.
+La configuracion corta de 10 min con cinta cierra el gate
+(`cabe_en_limites: true`) pero no llega a cubrir los 10 min completos por el
+tope de bytes.
+
+- `--budget-only` distingue dos cosas independientes:
+  1. `gate.cabe_en_limites`: el piloto cabe dentro de todos los presupuestos
+     (HTTP, almacenamiento, WS, etc.).
+  2. `cotizaciones_investigacion.cubre_instantes_entrada_salida`: la cinta
+     cubre el horizonte mas largo (instantes de entrada y salida) con su
+     capacidad efectiva (min de filas/bytes).
+  Una aprobacion del presupuesto general **no acredita** cobertura de
+  cotizaciones.
 
 ## 5. Codigos y pruebas
 
-- `scripts/quote_tape.py`: escritor/lector/evaluador.
-- `scripts/research_pilot.py`: flag, archivo, presupuesto, enganche de lectura y
-  de rotacion, estado en `estado.json` y `resumen.json`.
-- `tests/test_quote_tape.py`: 29 pruebas puras (cadencia, esquema, calidad,
-  seleccion, limites, descomposicion).
-- `tests/test_cotizaciones_local_piloto.py`: 7 pruebas de cadena completa
-  (trazas, exclusiones, rotacion, limite, desactivado, presupuesto con/sin red).
+- `scripts/quote_tape.py`: escritor/lector/evaluador. El lector `seleccionar`
+  mantiene un automa de cobertura: una cotizacion valida establece cobertura,
+  una invalidez (rotacion, salto de secuencia, perdida de calidad o fila
+  `faltante`) la rompe, y solo una cotizacion valida posterior la restablece.
+  Nunca se retrocede a una cotizacion previa despues de una invalidez. El
+  muestreo de una fila por segundo no oculta una invalidacion dentro del
+  mismo segundo: una cotizacion invalida en el mismo segundo se escribe para
+  registrar la ruptura de cobertura.
+- `scripts/research_pilot.py`: flag, archivo, presupuesto, enganche de lectura
+  y de rotacion, estado en `estado.json` y `resumen.json`.
+- `tests/test_quote_tape.py`: 33 pruebas puras (cadencia, esquema, calidad,
+  seleccion, limites, descomposicion, maquina de cobertura, invalidacion
+  dentro del mismo segundo, cinta agotada distinguible de sin cotizacion).
+- `tests/test_cotizaciones_local_piloto.py`: 11 pruebas de cadena completa
+  (trazas LONG/SHORT, exclusiones, rotacion, limite, desactivado,
+  presupuesto con/sin red, recuperacion de cobertura despues de invalidez,
+  invalidez sin recuperacion, invalidez posterior a entrada, cinta agotada
+  antes de salida).
 - `scripts/generar_evidencia_cotizaciones_local.py`: regenera
   `C-evidencia.json` con el mismo recorrido deterministico.
-- Verificacion: `36 passed` en los dos archivos nuevos; `105 passed` en el
-  bloque focalizado (`test_research_pilot`, ambos nuevos, `test_coste_ejecucion`
-  y `test_operativo_replay_offline`). En una de las corridas del bloque dos
-  pruebas preexistentes de `test_operativo_replay_offline` fallaron por la
-  sincronizacion de reloj del harness al compartir proceso; pasaron aisladas y
-  en la corrida seguinte del bloque completo. No afectan al registro nuevo ni
-  a la evidencia publicada. `test_engineering_clock_budget.py` no se incluye:
-  tiene un error de sintaxis preexistente en la linea 881 en archivo ajeno.
+- Verificacion: `44 passed` en los dos archivos de prueba del registro.
 - Comandos: `python -m pytest tests\test_quote_tape.py tests\test_cotizaciones_local_piloto.py -q`
-  y `python scripts\generar_evidencia_cotizaciones_local.py`. Dos regeneraciones
-  consecutivas dieron el mismo SHA-256
-  `c02b4ca4a3d71c2d48a7b95851d9941a60f979a92b6385ed49e45374feb93bff`.
+  y `python scripts\generar_evidencia_cotizaciones_local.py`.
 
 ## 6. Lo que esto acredita y lo que no
 

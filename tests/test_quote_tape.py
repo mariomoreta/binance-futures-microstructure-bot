@@ -217,7 +217,9 @@ class TestSeleccion(unittest.TestCase):
         sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
         self.assertEqual(sel["motivo"], "SIMBOLO_FUERA_DE_SEGUIMIENTO")
 
-    def test_valida_gana_a_faltante_posterior(self):
+    def test_faltante_posterior_rompe_cobertura(self):
+        """Una fila faltante (rotacion) despues de una cotizacion valida
+        rompe la cobertura: no se retrocede a la cotizacion previa."""
         filas = [
             {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
              "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
@@ -227,7 +229,84 @@ class TestSeleccion(unittest.TestCase):
              "motivo": "simbolo_fuera_de_seguimiento"},
         ]
         sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
+        self.assertEqual(sel["motivo"], "SIMBOLO_FUERA_DE_SEGUIMIENTO")
+        self.assertIsNone(sel["cotizacion"])
+
+    def test_calidad_invalida_rompe_cobertura_y_valida_posterior_restaura(self):
+        """Una cotizacion invalida rompe la cobertura; una valida posterior
+        la restablece y se usa esa (no la previa a la invalidez)."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 998_000, "event_ms": 998_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 2,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": False,
+             "motivos_invalidez": ["SALTO_SECUENCIA"]},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_500, "event_ms": 999_500, "seq": 3,
+             "best_bid": 101.0, "best_ask": 101.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 101.1, "valida": True},
+        ]
+        sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
         self.assertIsNone(sel["motivo"])
+        self.assertEqual(sel["cotizacion"]["seq"], 3)
+
+    def test_invalidacion_despues_de_T_no_altera_cotizacion_en_T(self):
+        """Una invalidez ocurrida DESPUES de T no afecta la cotizacion valida
+        en T (no se usan filas futuras)."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_001_000, "event_ms": 1_001_000, "seq": 2,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": False,
+             "motivos_invalidez": ["SALTO_SECUENCIA"]},
+        ]
+        sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
+        self.assertIsNone(sel["motivo"])
+        self.assertEqual(sel["cotizacion"]["seq"], 1)
+        self.assertEqual(sel["rechazadas_posteriores"], 1)
+
+    def test_invalidacion_dentro_del_mismo_segundo_rompe_cobertura(self):
+        """Una cotizacion valida al inicio del segundo seguida de una
+        invalidez dentro del mismo segundo: la cobertura se rompe en ese
+        segundo (el muestreo 1 fila/segundo no la oculta)."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_000_000, "event_ms": 1_000_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_000_700, "event_ms": 1_000_700, "seq": 2,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": False,
+             "motivos_invalidez": ["LIBRO_DEGRADADO"]},
+        ]
+        sel = qt.seleccionar("AAAUSDT", 1_000_900, filas, run_id="a")
+        self.assertEqual(sel["motivo"], "LIBRO_DEGRADADO")
+        self.assertIsNone(sel["cotizacion"])
+
+    def test_cinta_agotada_distinguible_de_sin_cotizacion(self):
+        """Una fila limite (cinta agotada) antes del instante se reporta como
+        LIMITE_ALCANZADO, no como SIN_COTIZACION."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 998_000, "event_ms": 998_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "limite", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": None, "seq": 2,
+             "motivo": "limite_filas"},
+        ]
+        sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
+        self.assertEqual(sel["motivo"], "LIMITE_ALCANZADO")
+        self.assertIsNone(sel["cotizacion"])
 
 
 class TestEvaluacion(unittest.TestCase):

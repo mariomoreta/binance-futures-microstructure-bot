@@ -1678,8 +1678,41 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     filas_cinta = (symbols * int(math.ceil(duration / cadencia_s))
                    if cfg.quote_tape_enabled and duration else 0)
     bytes_cinta = filas_cinta * COTIZACIONES_BYTES_FILA
+
+    # Capacidad de la cinta: el tope que se agote PRIMERO (filas o bytes).
+    # Con 4 MiB y 512 B/fila el techo por bytes es 8192 filas; con 20
+    # simbolos a 1 fila/s son 409,6 s (~6 min 50 s), antes de reservar para
+    # marcas. El techo por filas es 20 000 filas (~16,67 min). Se usa el
+    # minimo de ambos.
+    filas_max_por_bytes = int(cfg.quote_tape_max_bytes) // COTIZACIONES_BYTES_FILA
+    # Reserva para filas de marca (limite + faltantes por rotacion) que
+    # reducen el espacio disponible para cotizaciones.
+    filas_marca_reservadas = 1 + symbols * 2  # 1 limite + hasta 2 faltantes/simbolo
+    bytes_marca_reservados = filas_marca_reservadas * COTIZACIONES_BYTES_FILA
+    bytes_para_cotizaciones = max(0, int(cfg.quote_tape_max_bytes) - bytes_marca_reservados)
+    filas_disponibles_por_bytes = max(0, bytes_para_cotizaciones // COTIZACIONES_BYTES_FILA)
+    filas_efectivas = min(int(cfg.quote_tape_max_rows), filas_disponibles_por_bytes)
+
     if cfg.quote_tape_enabled:
         storage_total += min(bytes_cinta, int(cfg.quote_tape_max_bytes))
+
+    minutos_teoricos_por_filas = (
+        int(cfg.quote_tape_max_rows) / max(1, symbols) / max(cadencia_s, 1e-9) / 60.0
+    )
+    minutos_teoricos_por_bytes = (
+        filas_efectivas / max(1, symbols) / max(cadencia_s, 1e-9) / 60.0
+    )
+    minutos_cubiertos_por_tope = min(minutos_teoricos_por_filas,
+                                     minutos_teoricos_por_bytes)
+
+    # La cinta cubre los instantes de entrada y salida si su cobertura
+    # efectiva (min de filas/bytes) alcanza el horizonte mas largo. Esta
+    # comprobacion es INDEPENDIENTE de gate.cabe_en_limites: un presupuesto
+    # general aprobado no acredita cobertura de cotizaciones.
+    max_horizon_min = (max((h for _, h in cfg.horizons), default=0) / 60_000.0)
+    cubre_instantes_entrada_salida = (
+        cfg.quote_tape_enabled and symbols
+        and minutos_cubiertos_por_tope >= max_horizon_min)
 
     # La primera seleccion abre los feeds; cada seleccion posterior puede
     # cambiar el set y reabrir AMBOS feeds (/public y /market).
@@ -1777,13 +1810,19 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
             "bytes_por_fila_estimados": COTIZACIONES_BYTES_FILA,
             "filas_proyectadas": filas_cinta,
             "bytes_proyectados": bytes_cinta,
+            "filas_max_por_bytes": filas_max_por_bytes,
+            "filas_marca_reservadas": filas_marca_reservadas,
+            "filas_efectivas": filas_efectivas,
             "cobertura_captura_completa": (
-                filas_cinta <= int(cfg.quote_tape_max_rows)
+                filas_cinta <= filas_efectivas
                 and bytes_cinta <= int(cfg.quote_tape_max_bytes)),
             "minutos_cubiertos_por_tope": (
-                int(cfg.quote_tape_max_rows)
-                / max(1, symbols) / max(cadencia_s, 1e-9) / 60.0
+                minutos_cubiertos_por_tope
                 if cfg.quote_tape_enabled and symbols else 0.0),
+            "cubre_instantes_entrada_salida": (
+                bool(cubre_instantes_entrada_salida)
+                if cfg.quote_tape_enabled else False),
+            "max_horizon_min": max_horizon_min,
         },
         "supuestos": {
             "duracion_captura_s": duration,

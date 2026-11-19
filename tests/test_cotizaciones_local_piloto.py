@@ -252,6 +252,184 @@ class TestTrazas(Base):
         self.assertFalse(run.quote_path.exists())
         self.assertFalse(run.summary()["cotizaciones_investigacion"]["enabled"])
 
+    def test_invalididad_rompe_cobertura_y_solo_valida_posterior_restaura(self):
+        """Cotizacion valida en entrada, invalidez despues, libro recuperado
+        en salida: evaluable solo desde la nueva cotizacion de salida."""
+        simbolo = UNIVERSE[0]
+        run = self._start(quote_tape=True)
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        # Entrada: cotizacion valida.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+
+        # Invalidez (salto de secuencia) entre entrada y salida.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada + 10_000, "prev_id": 999,
+        })
+        run.step(entrada + 10_000, depth_symbols=(simbolo,), evaluate=False)
+
+        # Salida: libro recuperado con cotizacion valida nueva.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": salida, "bid": "100.4", "ask": "100.6",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(salida, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        # Entrada es valida (cotizacion previa a la invalidez).
+        sel_e = qt.seleccionar(simbolo, entrada, filas, run_id=RUN_ID)
+        self.assertIsNone(sel_e["motivo"], sel_e)
+
+        # Salida: cobertura restablecida solo por la cotizacion valida nueva.
+        sel_s = qt.seleccionar(simbolo, salida, filas, run_id=RUN_ID)
+        self.assertIsNone(sel_s["motivo"], sel_s)
+        self.assertEqual(sel_s["cotizacion"]["event_ms"], salida)
+
+        ev = qt.evaluar_episodio(
+            simbolo, entrada, salida, "LONG", qt.TAMANO_SIMULADO,
+            filas, run_id=RUN_ID)
+        self.assertTrue(ev["evaluable"], ev)
+        self.assertEqual(ev["fila_entrada"]["event_ms"], entrada)
+        self.assertEqual(ev["fila_salida"]["event_ms"], salida)
+
+    def test_invalidez_sin_recuperacion_no_es_evaluable(self):
+        """Cotizacion valida en entrada, invalidez despues y sin recuperacion:
+        la salida no es evaluable con motivo explicito."""
+        simbolo = UNIVERSE[0]
+        run = self._start(quote_tape=True)
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+
+        # Salto de secuencia (prev_id encadenado incorrectamente) sin
+        # recuperacion antes de la salida: el libro queda degradado.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada + 10_000, "prev_id": 999,
+        })
+        run.step(entrada + 10_000, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        sel_e = qt.seleccionar(simbolo, entrada, filas, run_id=RUN_ID)
+        self.assertIsNone(sel_e["motivo"], sel_e)
+
+        sel_s = qt.seleccionar(simbolo, salida, filas, run_id=RUN_ID)
+        self.assertEqual(sel_s["motivo"], "SALTO_SECUENCIA")
+        self.assertIsNone(sel_s["cotizacion"])
+
+        ev = qt.evaluar_episodio(
+            simbolo, entrada, salida, "LONG", qt.TAMANO_SIMULADO,
+            filas, run_id=RUN_ID)
+        self.assertFalse(ev["evaluable"])
+        self.assertTrue(ev["motivo"].startswith("SIN_COTIZACION_SALIDA:"),
+                        ev)
+
+    def test_invalididad_despues_de_entrada_no_altera_entrada(self):
+        """Una invalidez ocurrida DESPUES del instante de entrada no cambia
+        la cotizacion valida en entrada (aunque falle la salida)."""
+        simbolo = UNIVERSE[0]
+        run = self._start(quote_tape=True)
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+
+        # Invalidez despues de entrada, antes de salida.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada + 60_000, "prev_id": 999,
+        })
+        run.step(entrada + 60_000, depth_symbols=(simbolo,), evaluate=False)
+
+        # Salida sin cotizacion valida (cobertura rota).
+        run.step(salida, depth_symbols=(), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        # Entrada sigue usando la cotizacion valida de entrada (la invalidez
+        # es posterior a T y no se usa).
+        sel_e = qt.seleccionar(simbolo, entrada, filas, run_id=RUN_ID)
+        self.assertIsNone(sel_e["motivo"], sel_e)
+        self.assertEqual(sel_e["cotizacion"]["event_ms"], entrada)
+
+        # Salida: cobertura rota por la invalidez posterior.
+        sel_s = qt.seleccionar(simbolo, salida, filas, run_id=RUN_ID)
+        self.assertEqual(sel_s["motivo"], "SALTO_SECUENCIA")
+        self.assertIsNone(sel_s["cotizacion"])
+
+    def test_cinta_agotada_antes_de_salida_no_es_evaluable(self):
+        """Cinta agotada antes de la salida: no evaluable por LIMITE_ALCANZADO
+        y el piloto sigue registrando observaciones normales."""
+        simbolo = UNIVERSE[0]
+        run = self._start(quote_tape=True, quote_tape_max_rows=2)
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        # Tres intentos de escritura llenan la cinta (max_rows=2): el tercer
+        # intento dispara la fila limite.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada + 1_000, "bid": "100.1", "ask": "100.3",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada + 1_000, depth_symbols=(simbolo,), evaluate=False)
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada + 2_000, "bid": "100.2", "ask": "100.4",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada + 2_000, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        # Cinta agotada: 2 cotizaciones + 1 fila limite.
+        n_cot = sum(1 for f in filas if f.get("kind") == "cotizacion")
+        n_lim = sum(1 for f in filas if f.get("kind") == "limite")
+        self.assertEqual(n_cot, 2)
+        self.assertEqual(n_lim, 1)
+
+        # La entrada es evaluable (cotizacion valida antes del tope).
+        sel_e = qt.seleccionar(simbolo, entrada, filas, run_id=RUN_ID)
+        self.assertIsNone(sel_e["motivo"], sel_e)
+
+        # La salida no: la cinta esta agotada (fila limite antes de salida).
+        sel_s = qt.seleccionar(simbolo, salida, filas, run_id=RUN_ID)
+        self.assertEqual(sel_s["motivo"], "LIMITE_ALCANZADO")
+        self.assertIsNone(sel_s["cotizacion"])
+
+        # El piloto siguio con su registro normal (observaciones escritas).
+        obs = trp.read_rows(run.obs_path)
+        self.assertGreaterEqual(len(obs), 1)
+
 
 class TestPresupuesto(Base):
     def test_proyeccion_sin_red(self):
@@ -263,8 +441,25 @@ class TestPresupuesto(Base):
         self.assertEqual(cinta["filas_proyectadas"], 20 * 14_400)
         self.assertEqual(cinta["bytes_proyectados"], 20 * 14_400 * 512)
         self.assertFalse(cinta["cobertura_captura_completa"])
+        # Capacidad por el tope que se agote primero (bytes: 8192 filas ->
+        # ~6.8 min con 20 simbolos a 1 fila/s; filas: ~16.67 min). El
+        # indicador usa el minimo de ambos, tras reservar espacio para marcas.
+        filas_max_por_bytes = rp.COTIZACIONES_LIMITE_BYTES // rp.COTIZACIONES_BYTES_FILA
+        filas_marca = 1 + 20 * 2
+        filas_efectivas = min(
+            rp.COTIZACIONES_LIMITE_FILAS,
+            (rp.COTIZACIONES_LIMITE_BYTES - filas_marca * rp.COTIZACIONES_BYTES_FILA)
+            // rp.COTIZACIONES_BYTES_FILA,
+        )
+        minutos_esperados = min(
+            rp.COTIZACIONES_LIMITE_FILAS / 20 / 60,
+            filas_efectivas / 20 / 60,
+        )
         self.assertAlmostEqual(cinta["minutos_cubiertos_por_tope"],
-                               20_000 / 20 / 60, places=4)
+                               minutos_esperados, places=4)
+        self.assertEqual(cinta["filas_efectivas"], filas_efectivas)
+        self.assertEqual(cinta["filas_marca_reservadas"], filas_marca)
+        self.assertFalse(cinta["cubre_instantes_entrada_salida"])
         # El tope actual no cubre 4 h con 20 simbolos; ademas el presupuesto
         # base de esa configuracion ya era insuficiente antes de la cinta.
         self.assertFalse(presupuesto["gate"]["cabe_en_limites"])
