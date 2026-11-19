@@ -308,6 +308,80 @@ class TestSeleccion(unittest.TestCase):
         self.assertEqual(sel["motivo"], "LIMITE_ALCANZADO")
         self.assertIsNone(sel["cotizacion"])
 
+    def test_rotacion_y_limite_mismo_ms_que_cotizacion(self):
+        """Rotacion y limite en el mismo received_ms que una cotizacion valida.
+        Orden: received_ms primero, desempate por seq. La rotacion (seq mayor)
+        va despues de la cotizacion y rompe la cobertura."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_000_000, "event_ms": 1_000_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "faltante", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_000_000, "event_ms": None, "seq": 2,
+             "motivo": "simbolo_fuera_de_seguimiento"},
+        ]
+        # La cotizacion (seq=1) va antes de la rotacion (seq=2): cobertura rota.
+        sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
+        self.assertEqual(sel["motivo"], "SIMBOLO_FUERA_DE_SEGUIMIENTO")
+        self.assertIsNone(sel["cotizacion"])
+
+    def test_agotamiento_persistido_consulta_despues_del_corte(self):
+        """Evidencia de agotamiento en artefacto persistido (fuera del JSONL):
+        consulta despues del corte devuelve LIMITE_ALCANZADO."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 998_000, "event_ms": 998_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        # No hay fila limite en el JSONL (no cabio), pero el artefacto
+        # persistido dice que se agoto en 999_000.
+        agotamiento = {"instante_ms": 999_000, "motivo": "limite_bytes"}
+
+        # Consulta ANTES del corte: cotizacion valida.
+        sel_antes = qt.seleccionar("AAAUSDT", 998_500, filas, run_id="a",
+                                   agotamiento=agotamiento)
+        self.assertIsNone(sel_antes["motivo"], sel_antes)
+        self.assertEqual(sel_antes["cotizacion"]["seq"], 1)
+
+        # Consulta DESPUES del corte: LIMITE_ALCANZADO.
+        sel_despues = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a",
+                                     agotamiento=agotamiento)
+        self.assertEqual(sel_despues["motivo"], "LIMITE_ALCANZADO")
+        self.assertIsNone(sel_despues["cotizacion"])
+        self.assertEqual(sel_despues.get("agotamiento"), "limite_bytes")
+
+    def test_agotamiento_sin_instante_cobertura_unknown(self):
+        """Se sabe que se agoto pero no cuando, y no hay cotizacion valida
+        para el instante consultado: cobertura UNKNOWN para el tramo."""
+        filas = []
+        agotamiento = {"instante_ms": None, "motivo": "limite_bytes"}
+
+        sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a",
+                             agotamiento=agotamiento)
+        self.assertEqual(sel["motivo"], "COBERTURA_UNKNOWN")
+        self.assertIsNone(sel["cotizacion"])
+        self.assertEqual(sel.get("agotamiento"), "limite_bytes")
+
+    def test_invalidez_posterior_a_T_no_altera_entrada(self):
+        """Invalidez ocurrida DESPUES de T no afecta la cotizacion valida en T."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_001_000, "event_ms": 1_001_000, "seq": 2,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": False,
+             "motivos_invalidez": ["SALTO_SECUENCIA"]},
+        ]
+        sel = qt.seleccionar("AAAUSDT", 1_000_000, filas, run_id="a")
+        self.assertIsNone(sel["motivo"])
+        self.assertEqual(sel["cotizacion"]["seq"], 1)
+        self.assertEqual(sel["rechazadas_posteriores"], 1)
+
 
 class TestEvaluacion(unittest.TestCase):
     def setUp(self):

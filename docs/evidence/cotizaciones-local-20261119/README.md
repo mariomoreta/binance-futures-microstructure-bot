@@ -147,12 +147,18 @@ La configuracion corta de 10 min con cinta cierra el gate
 (`cabe_en_limites: true`) pero no llega a cubrir los 10 min completos por el
 tope de bytes.
 
-- `--budget-only` distingue dos cosas independientes:
+- `--budget-only` distingue tres cosas independientes:
   1. `gate.cabe_en_limites`: el piloto cabe dentro de todos los presupuestos
      (HTTP, almacenamiento, WS, etc.).
-  2. `cotizaciones_investigacion.cubre_instantes_entrada_salida`: la cinta
-     cubre el horizonte mas largo (instantes de entrada y salida) con su
-     capacidad efectiva (min de filas/bytes).
+  2. `cotizaciones_investigacion.minutos_cubiertos_por_tope`: duracion
+     estimada de la cinta, calculada como `filas_efectivas * cadencia_s /
+     simbolos / 60` (multiplicar por el intervalo entre filas, no dividir).
+     Una fila cada 2 s cubre el doble de tiempo que una cada 1 s.
+  3. `cotizaciones_investigacion.cubre_hasta_ultima_salida`: si la cinta
+     cubre desde la ultima entrada admitida hasta su salida (entrada + 5 min),
+     verificando que el feed esta previsto hasta ese instante. Requiere
+     `--quote-tape-ultima-entrada-ms` y `--quote-tape-fin-feed-ms`; sin ellos
+     no se declara cobertura.
   Una aprobacion del presupuesto general **no acredita** cobertura de
   cotizaciones.
 
@@ -165,20 +171,29 @@ tope de bytes.
   Nunca se retrocede a una cotizacion previa despues de una invalidez. El
   muestreo de una fila por segundo no oculta una invalidacion dentro del
   mismo segundo: una cotizacion invalida en el mismo segundo se escribe para
-  registrar la ruptura de cobertura.
+  registrar la ruptura de cobertura. Dentro del mismo `run_id`, las filas se
+  ordenan primero por `received_ms` y se desempata por `seq` persistido;
+  `event_ms` solo se usa para disponibilidad y frescura, nunca para ordenar
+  retroactivamente. Cuando el tope de bytes o filas impide escribir incluso
+  la fila `limite`, el piloto persiste el instante y motivo de agotamiento
+  en `resumen.json` (`cap_reached`, `cap_reason`, `cap_instante_ms`); el
+  replay lee ese artefacto y, a partir de `cap_instante_ms`, devuelve
+  `LIMITE_ALCANZADO` aunque el JSONL no tenga fila `limite`.
 - `scripts/research_pilot.py`: flag, archivo, presupuesto, enganche de lectura
   y de rotacion, estado en `estado.json` y `resumen.json`.
-- `tests/test_quote_tape.py`: 33 pruebas puras (cadencia, esquema, calidad,
-  seleccion, limites, descomposicion, maquina de cobertura, invalidacion
-  dentro del mismo segundo, cinta agotada distinguible de sin cotizacion).
-- `tests/test_cotizaciones_local_piloto.py`: 11 pruebas de cadena completa
+- `tests/test_quote_tape.py`: 39 pruebas puras (cadencia, esquema, calidad,
+  seleccion, limites, descomposicion, maquina de cobertura, orden de estados
+  en el mismo milisegundo, agotamiento sin marca, cinta agotada distinguible
+  de sin cotizacion).
+- `tests/test_cotizaciones_local_piloto.py`: 18 pruebas de cadena completa
   (trazas LONG/SHORT, exclusiones, rotacion, limite, desactivado,
   presupuesto con/sin red, recuperacion de cobertura despues de invalidez,
   invalidez sin recuperacion, invalidez posterior a entrada, cinta agotada
-  antes de salida).
+  antes de salida, agotamiento por bytes sin marca en JSONL, cadencia 2 s,
+  cobertura hasta ultima salida).
 - `scripts/generar_evidencia_cotizaciones_local.py`: regenera
   `C-evidencia.json` con el mismo recorrido deterministico.
-- Verificacion: `44 passed` en los dos archivos de prueba del registro.
+- Verificacion: `57 passed` en los dos archivos de prueba del registro.
 - Comandos: `python -m pytest tests\test_quote_tape.py tests\test_cotizaciones_local_piloto.py -q`
   y `python scripts\generar_evidencia_cotizaciones_local.py`.
 

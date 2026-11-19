@@ -6614,3 +6614,20 @@ No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de estrate
 
 Evidencia: `--budget-only` con 20 simbolos, cadencia 1 s, duracion 600 s: `minutos_cubiertos_por_tope: 6.7925`, `cubre_instantes_entrada_salida: false` (horizonte max 60 min), `filas_efectivas: 8151`, `filas_marca_reservadas: 41`, `filas_max_por_bytes: 8192`, `gate.cabe_en_limites: true`.
 
+
+## 2026-11-19 - cierre: orden de estados, agotamiento sin marca y duracion de la cinta
+
+Base publicada: `d16862c77425b735876d1a2ed69d118243acce33`, rama `fix/quote-tape-validity-coverage`.
+
+Se corrige el orden del replay en `seleccionar` de `scripts/quote_tape.py`: dentro del mismo `run_id`, las filas se ordenan primero por `received_ms` y se desempata por `seq` persistido. `event_ms` solo se usa para disponibilidad y frescura, nunca para ordenar retroactivamente las marcas. Una cotizacion valida y una marca de rotacion/limite que comparten `received_ms` se procesan en orden de `seq`; la marca con `seq` mayor va despues y rompe la cobertura si es posterior.
+
+Se corrige el agotamiento de la cinta sin marca en el JSONL: cuando el tope de bytes o filas impide escribir incluso la fila `limite`, el piloto persiste el instante y motivo de agotamiento en `resumen.json` (`cotizaciones_investigacion.cap_reached`, `cap_reason`, `cap_instante_ms`). El replay lee ese artefacto mediante el parametro opcional `agotamiento` de `seleccionar` y, a partir de `cap_instante_ms`, devuelve `LIMITE_ALCANZADO` aunque el JSONL no tenga fila `limite`. Una consulta anterior conserva su resultado valido. Si se sabe que se agoto pero no cuando, se declara `COBERTURA_UNKNOWN`.
+
+Se corrige el calculo de duracion en `compute_budget` de `scripts/research_pilot.py`: la duración se calcula multiplicando por el intervalo entre filas (`filas_efectivas * cadencia_s / simbolos / 60`), no dividiendo. Una fila cada 2 s cubre el doble de tiempo que una cada 1 s. Se añade `cubre_hasta_ultima_salida` que verifica si la cinta cubre desde la ultima entrada admitida hasta su salida (entrada + 5 min), requiriendo `--quote-tape-ultima-entrada-ms` y `--quote-tape-fin-feed-ms`. Sin ellos no se declara cobertura. Se agregan campos `quote_tape_ultima_entrada_ms` y `quote_tape_fin_feed_ms` a `PilotConfig`.
+
+Se agregan pruebas enfocadas: `tests/test_quote_tape.py` pasa de 33 a 39 pruebas (orden de estados en el mismo ms, agotamiento sin marca, cobertura UNKNOWN); `tests/test_cotizaciones_local_piloto.py` pasa de 11 a 18 pruebas (agotamiento por bytes sin marca en JSONL, cadencia 2 s, cobertura hasta ultima salida, sin ultima entrada no declara cobertura). `57 passed` en conjunto. Evidencia actualizada en `docs/evidence/cotizaciones-local-20261119/README.md`.
+
+No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de estrategia, selector, horizonte o dashboard. El bloque termina con aceptacion local documentada.
+
+Evidencia: `--budget-only` con 20 simbolos, cadencia 1 s, duracion 600 s, ultima entrada en 100 s y fin del feed en 600 s: `minutos_cubiertos_por_tope: 6.7925`, `cubre_hasta_ultima_salida: true`, `cubre_instantes_entrada_salida: false`, `filas_efectivas: 8151`, `filas_marca_reservadas: 41`, `gate.cabe_en_limites: true`. Con cadencia 2 s: `minutos_cubiertos_por_tope: 13.585` (el doble).
+

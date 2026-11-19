@@ -1521,6 +1521,12 @@ class PilotConfig:
     quote_tape_max_rows: int = COTIZACIONES_LIMITE_FILAS
     quote_tape_max_bytes: int = COTIZACIONES_LIMITE_BYTES
     quote_tape_cadencia_ms: int = COTIZACIONES_CADENCIA_MS
+    # Ultima entrada admitida (ms de epoch) y fin previsto del feed (ms de
+    # epoch). Si se especifican, el presupuesto indica si la cinta cubre
+    # desde la primera entrada hasta la ultima salida (entrada + 5 min).
+    # Sin ellos no se declara cobertura de extremos.
+    quote_tape_ultima_entrada_ms: Optional[int] = None
+    quote_tape_fin_feed_ms: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -1567,6 +1573,8 @@ class PilotConfig:
             "quote_tape_max_rows": self.quote_tape_max_rows,
             "quote_tape_max_bytes": self.quote_tape_max_bytes,
             "quote_tape_cadencia_ms": self.quote_tape_cadencia_ms,
+            "quote_tape_ultima_entrada_ms": self.quote_tape_ultima_entrada_ms,
+            "quote_tape_fin_feed_ms": self.quote_tape_fin_feed_ms,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
             "protocol_version": PROTOCOL_VERSION,
@@ -1696,14 +1704,35 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     if cfg.quote_tape_enabled:
         storage_total += min(bytes_cinta, int(cfg.quote_tape_max_bytes))
 
+    # Duracion cubierta por la tope: filas_efectivas * cadencia_s / simbolos
+    # (multiplicar por el intervalo entre filas, no dividir). Una fila cada 2 s
+    # cubre el doble de tiempo que una cada 1 s, aunque reduce la resolucion.
     minutos_teoricos_por_filas = (
-        int(cfg.quote_tape_max_rows) / max(1, symbols) / max(cadencia_s, 1e-9) / 60.0
+        int(cfg.quote_tape_max_rows) * cadencia_s / max(1, symbols) / 60.0
     )
     minutos_teoricos_por_bytes = (
-        filas_efectivas / max(1, symbols) / max(cadencia_s, 1e-9) / 60.0
+        filas_efectivas * cadencia_s / max(1, symbols) / 60.0
     )
     minutos_cubiertos_por_tope = min(minutos_teoricos_por_filas,
                                      minutos_teoricos_por_bytes)
+
+    # Coverage de extremos: la cinta debe cubrir desde la ultima entrada
+    # admitida hasta su salida (entrada + 5 min), y el feed debe estar
+    # previsto hasta ese instante. Si no se especifica ultima_entrada ni
+    # fin_feed, no se declara cobertura.
+    entrada_ms = cfg.quote_tape_ultima_entrada_ms
+    fin_feed_ms = cfg.quote_tape_fin_feed_ms
+    cubre_hasta_ultima_salida = False
+    if (cfg.quote_tape_enabled and symbols and entrada_ms is not None
+            and fin_feed_ms is not None):
+        salida_ms = entrada_ms + 5 * 60_000  # 5 minutos despues de entrada
+        # Duracion necesaria en segundos desde el inicio del feed hasta la
+        # salida. La cinta empieza en el inicio del capture (t=0 del reloj).
+        segundos_necessarios = (salida_ms) / 1000.0
+        filas_necessarias = math.ceil(segundos_necessarios / cadencia_s) * symbols
+        cubre_hasta_ultima_salida = (
+            filas_necessarias <= filas_efectivas
+            and fin_feed_ms >= salida_ms)
 
     # La cinta cubre los instantes de entrada y salida si su cobertura
     # efectiva (min de filas/bytes) alcanza el horizonte mas largo. Esta
@@ -1821,6 +1850,9 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                 if cfg.quote_tape_enabled and symbols else 0.0),
             "cubre_instantes_entrada_salida": (
                 bool(cubre_instantes_entrada_salida)
+                if cfg.quote_tape_enabled else False),
+            "cubre_hasta_ultima_salida": (
+                bool(cubre_hasta_ultima_salida)
                 if cfg.quote_tape_enabled else False),
             "max_horizon_min": max_horizon_min,
         },
@@ -4727,6 +4759,13 @@ def build_parser() -> argparse.ArgumentParser:
                    default=COTIZACIONES_LIMITE_BYTES)
     p.add_argument("--quote-tape-cadencia-ms", type=int,
                    default=COTIZACIONES_CADENCIA_MS)
+    p.add_argument("--quote-tape-ultima-entrada-ms", type=int, default=None,
+                   help="ultima entrada admitida (ms de epoch); si se especifica, "
+                        "el presupuesto indica si la cinta cubre hasta la "
+                        "salida (entrada + 5 min)")
+    p.add_argument("--quote-tape-fin-feed-ms", type=int, default=None,
+                   help="fin previsto del feed (ms de epoch); se verifica que "
+                        "la cinta este prevista hasta ese instante")
     p.add_argument("--funding-calendars", default=None,
                    help="ruta a JSON con calendarios de funding por simbolo "
                         "(clave = simbolo, valor = calendario)")
@@ -4883,6 +4922,8 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         quote_tape_max_rows=int(args.quote_tape_max_rows),
         quote_tape_max_bytes=int(args.quote_tape_max_bytes),
         quote_tape_cadencia_ms=int(args.quote_tape_cadencia_ms),
+        quote_tape_ultima_entrada_ms=args.quote_tape_ultima_entrada_ms,
+        quote_tape_fin_feed_ms=args.quote_tape_fin_feed_ms,
     )
 
 

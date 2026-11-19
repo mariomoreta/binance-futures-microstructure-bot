@@ -55,6 +55,7 @@ class QuoteTape:
         self.bytes_written = 0
         self.cap_reached = False
         self.cap_reason: Optional[str] = None
+        self.cap_instante_ms: Optional[int] = None
         self.quotes_written = 0
         self.missing_written = 0
         self.duplicated_seconds = 0
@@ -100,6 +101,7 @@ class QuoteTape:
             return
         self.cap_reached = True
         self.cap_reason = motivo
+        self.cap_instante_ms = int(received_ms or time.time() * 1000)
         if self._limite_escrito or self._cerrando:
             return
         self._limite_escrito = True
@@ -109,7 +111,7 @@ class QuoteTape:
                 "kind": "limite",
                 "version": VERSION,
                 "run_id": self.run_id,
-                "received_ms": int(received_ms or time.time() * 1000),
+                "received_ms": self.cap_instante_ms,
                 "motivo": motivo,
                 "filas_escritas": self.rows_written,
                 "bytes_escritos": self.bytes_written,
@@ -250,6 +252,7 @@ class QuoteTape:
             "duplicated_seconds": self.duplicated_seconds,
             "cap_reached": self.cap_reached,
             "cap_reason": self.cap_reason,
+            "cap_instante_ms": self.cap_instante_ms,
         }
 
 
@@ -279,9 +282,13 @@ def leer_tape(path: Path) -> List[Dict[str, Any]]:
     return filas
 
 
-def _clave_orden(fila: Dict[str, Any]) -> Tuple[int, int, int]:
+def _clave_orden(fila: Dict[str, Any]) -> Tuple[int, int]:
+    """Orden de replay: primero received_ms, desempate por seq persistido.
+
+    event_ms solo se usa para comprobar disponibilidad y frescura, nunca
+    para ordenar retroactivamente las marcas.
+    """
     return (int(fila.get("received_ms") or 0),
-            int(fila.get("event_ms") or 0),
             int(fila.get("seq") or 0))
 
 
@@ -293,7 +300,8 @@ def _motivo_invalido(fila: Dict[str, Any]) -> str:
 
 def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
                 *, run_id: Optional[str] = None,
-                max_edad_ms: int = MAX_EDAD_MS) -> Dict[str, Any]:
+                max_edad_ms: int = MAX_EDAD_MS,
+                agotamiento: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Ultimo estado de cobertura conocido en ``instante_ms``.
 
     Recorre las filas en orden cronologico hasta el instante y mantiene un
@@ -302,12 +310,22 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
     ``faltante``) la rompe, y solo una cotizacion valida posterior la
     restablece. Nunca se retrocede a una cotizacion previa despues de una
     invalidez. Nunca se usa una fila recibida despues del instante.
+
+    ``agotamiento`` (opcional) es la evidencia de agotamiento de la cinta
+    leida de un artefacto persistido del piloto (resumen.json/estado.json):
+      - {"instante_ms": int, "motivo": str}: la cinta se agoto en ese
+        instante; consultas en o despues de ese instante devuelven
+        LIMITE_ALCANZADO, consultas antes conservan su resultado valido.
+      - {"instante_ms": None, "motivo": str}: se sabe que se agoto pero no
+        se acredita cuando; se declara cobertura UNKNOWN para el tramo
+        afectado.
     """
     instante = int(instante_ms)
     simbolo = str(symbol).upper()
 
     # Recopilar y ordenar cronologicamente todas las filas relevantes hasta T.
-    eventos: List[Tuple[int, int, int, Dict[str, Any]]] = []
+    # Orden: received_ms primero, desempate por seq persistido.
+    eventos: List[Tuple[int, int, Dict[str, Any]]] = []
     futuras = 0
     for fila in filas:
         if run_id is not None and fila.get("run_id") != run_id:
@@ -324,7 +342,7 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
             except (TypeError, ValueError):
                 continue
             if recv <= instante:
-                eventos.append((recv, 0, int(fila.get("seq") or 0), fila))
+                eventos.append((recv, int(fila.get("seq") or 0), fila))
             continue
         if kind != "cotizacion":
             continue
@@ -336,13 +354,13 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
         if recv > instante or ev > instante:
             futuras += 1
             continue
-        eventos.append((recv, ev, int(fila.get("seq") or 0), fila))
-    eventos.sort(key=lambda e: (e[0], e[1], e[2]))
+        eventos.append((recv, int(fila.get("seq") or 0), fila))
+    eventos.sort(key=lambda e: (e[0], e[1]))
 
     # Automata de cobertura: estado actual al llegar al instante.
     cotizacion_actual: Optional[Dict[str, Any]] = None
     motivo_actual: Optional[str] = None
-    for _recv, _ev, _seq, fila in eventos:
+    for _recv, _seq, fila in eventos:
         kind = fila.get("kind")
         if kind == "cotizacion":
             if fila.get("valida") is True:
@@ -360,9 +378,28 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
             motivo_actual = "LIMITE_ALCANZADO"
 
     rech_viejas = 0
-    for _recv, ev, _seq, fila in eventos:
+    for _recv, _seq, fila in eventos:
         if fila.get("kind") == "cotizacion" and instante - int(fila["event_ms"]) > max_edad_ms:
             rech_viejas += 1
+
+    # --- Agotamiento de la cinta (evidencia persistida, fuera del JSONL) ---
+    ag_instante: Optional[int] = None
+    ag_motivo: Optional[str] = None
+    if agotamiento is not None:
+        try:
+            ag_instante = agotamiento.get("instante_ms")
+            ag_instante = int(ag_instante) if ag_instante is not None else None
+        except (TypeError, ValueError):
+            ag_instante = None
+        ag_motivo = str(agotamiento.get("motivo") or "LIMITE_ALCANZADO")
+
+    if ag_instante is not None and instante >= ag_instante:
+        # La cinta ya se agoto antes o en este instante.
+        return {"cotizacion": None, "motivo": "LIMITE_ALCANZADO",
+                "candidatas": 0,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas,
+                "agotamiento": ag_motivo}
 
     if cotizacion_actual is not None:
         ev = int(cotizacion_actual["event_ms"])
@@ -387,6 +424,15 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
                 "candidatas": 0,
                 "rechazadas_posteriores": futuras,
                 "rechazadas_viejas": rech_viejas}
+
+    # Sabemos que se agoto pero no cuando, y no hay cobertura valida para
+    # el instante consultado: declaramos UNKNOWN para el tramo afectado.
+    if agotamiento is not None and ag_instante is None:
+        return {"cotizacion": None, "motivo": "COBERTURA_UNKNOWN",
+                "candidatas": 0,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas,
+                "agotamiento": ag_motivo}
 
     if futuras:
         return {"cotizacion": None, "motivo": "COTIZACION_FUTURA",

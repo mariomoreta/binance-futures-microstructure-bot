@@ -19,20 +19,26 @@ el registro normal. Cadencia de 1 s, maximo 5 000 ms de antiguedad, topes de
 trazas LONG y SHORT recuperadas de JSONL, exclusiones con codigo explicito,
 rotacion con `faltante`, limite sin detener el piloto y presupuesto con/sin red.
 
-**Correcciones de validez y cobertura (2026-11-19):** el lector `seleccionar`
-usa un automa de cobertura en orden cronologico: una invalidez (rotacion, salto
-de secuencia, perdida de calidad o fila `faltante`) rompe la cobertura y solo
-una cotizacion valida posterior la restablece; no se retrocede a una cotizacion
-previa. El muestreo 1 fila/segundo no oculta una invalidacion dentro del mismo
-segundo. Una fila `limite` (cinta agotada) se distingue de `SIN_COTIZACION`.
-El presupuesto de cobertura usa el tope que se agota primero (filas o bytes):
-con 4 MiB y 512 B/fila son 8 192 filas teóricas (~6 min 50 s con 20 simbolos a
-1 s, antes de reservar marcas); tras reserva para marcas las filas efectivas
-son 8 151 (~6,79 min). `--budget-only` distingue `gate.cabe_en_limites` de
-`cubre_instantes_entrada_salida`; una aprobacion de presupuesto no acredita
-cobertura de cotizaciones. No se aumentan topes.
+**Correcciones de validez y cobertura (2026-11-19, cierre):** el lector
+`seleccionar` ordena filas por `received_ms` y desempata por `seq` persistido;
+`event_ms` solo se usa para disponibilidad y frescura. Una invalidez (rotacion,
+salto de secuencia, perdida de calidad o fila `faltante`) rompe la cobertura y
+solo una cotizacion valida posterior la restablece; no se retrocede a una
+cotizacion previa. Una fila `limite` (cinta agotada) se distingue de
+`SIN_COTIZACION`. Cuando el tope impide escribir incluso la fila `limite`, el
+piloto persiste instante y motivo en `resumen.json` (`cap_reached`,
+`cap_reason`, `cap_instante_ms`) y el replay devuelve `LIMITE_ALCANZADO` a
+partir de ese instante. El presupuesto de cobertura usa el tope que se agota
+primero (filas o bytes): con 4 MiB y 512 B/fila son 8 192 filas teoricas
+(~6 min 50 s con 20 simbolos a 1 s, antes de reservar marcas); tras reserva
+para marcas las filas efectivas son 8 151 (~6,79 min). La duracion se calcula
+multiplicando por el intervalo entre filas (una fila cada 2 s cubre el doble
+que una cada 1 s). `--budget-only` distingue `gate.cabe_en_limites`,
+`minutos_cubiertos_por_tope` y `cubre_hasta_ultima_salida` (requiere
+`--quote-tape-ultima-entrada-ms` y `--quote-tape-fin-feed-ms`); una aprobacion
+de presupuesto no acredita cobertura de cotizaciones. No se aumentan topes.
 
-**Verificacion:** 44 pruebas (33 puras + 11 de cadena), 105 passed en el
+**Verificacion:** 57 pruebas (39 puras + 18 de cadena), 105 passed en el
 bloque focalizado. Evidencia compacta en
 `docs/evidence/cotizaciones-local-20261119/`; generador reproducible
 `scripts/generar_evidencia_cotizaciones_local.py`.

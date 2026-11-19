@@ -441,9 +441,9 @@ class TestPresupuesto(Base):
         self.assertEqual(cinta["filas_proyectadas"], 20 * 14_400)
         self.assertEqual(cinta["bytes_proyectados"], 20 * 14_400 * 512)
         self.assertFalse(cinta["cobertura_captura_completa"])
-        # Capacidad por el tope que se agote primero (bytes: 8192 filas ->
-        # ~6.8 min con 20 simbolos a 1 fila/s; filas: ~16.67 min). El
-        # indicador usa el minimo de ambos, tras reservar espacio para marcas.
+        # Capacidad por el tope que se agote primero (filas o bytes).
+        # La duracion se calcula MULTIPLICANDO por el intervalo entre filas
+        # (no dividiendo): filas * cadencia_s / simbolos / 60.
         filas_max_por_bytes = rp.COTIZACIONES_LIMITE_BYTES // rp.COTIZACIONES_BYTES_FILA
         filas_marca = 1 + 20 * 2
         filas_efectivas = min(
@@ -451,9 +451,10 @@ class TestPresupuesto(Base):
             (rp.COTIZACIONES_LIMITE_BYTES - filas_marca * rp.COTIZACIONES_BYTES_FILA)
             // rp.COTIZACIONES_BYTES_FILA,
         )
+        cadencia_s = 1.0
         minutos_esperados = min(
-            rp.COTIZACIONES_LIMITE_FILAS / 20 / 60,
-            filas_efectivas / 20 / 60,
+            rp.COTIZACIONES_LIMITE_FILAS * cadencia_s / 20 / 60,
+            filas_efectivas * cadencia_s / 20 / 60,
         )
         self.assertAlmostEqual(cinta["minutos_cubiertos_por_tope"],
                                minutos_esperados, places=4)
@@ -470,6 +471,144 @@ class TestPresupuesto(Base):
         self.assertFalse(desactivado["cotizaciones_investigacion"]["enabled"])
         self.assertEqual(
             desactivado["cotizaciones_investigacion"]["filas_proyectadas"], 0)
+
+    def test_cadencia_dos_segundos_cubre_el_doble(self):
+        """A igualdad de filas y simbolos, una fila cada 2 s cubre el doble
+        de tiempo que una cada 1 s (multiplicar por intervalo, no dividir)."""
+        cfg_1s = rp.PilotConfig(run_id="b1", out_dir=self.tmp / "b1",
+                                duration_seconds=3_600, max_symbols=20,
+                                quote_tape_enabled=True,
+                                quote_tape_cadencia_ms=1_000)
+        cfg_2s = rp.PilotConfig(run_id="b2", out_dir=self.tmp / "b2",
+                                duration_seconds=3_600, max_symbols=20,
+                                quote_tape_enabled=True,
+                                quote_tape_cadencia_ms=2_000)
+        b1 = rp.compute_budget(cfg_1s)["cotizaciones_investigacion"]
+        b2 = rp.compute_budget(cfg_2s)["cotizaciones_investigacion"]
+        # Mismas filas proyectadas (duracion/1s vs duracion/2s da diferente nro
+        # de filas porque el proyecto usa ceil(duration/cadencia_s)).
+        # Pero minutos cubiertos por tope: 2s cubre el doble que 1s.
+        self.assertAlmostEqual(
+            b2["minutos_cubiertos_por_tope"],
+            2 * b1["minutos_cubiertos_por_tope"], places=4)
+
+    def test_cubre_hasta_ultima_salida_entrada_tarde(self):
+        """Entrada tardia cuya salida queda fuera aunque el presupuesto
+        general apruebe: cubre_hasta_ultima_salida es False."""
+        # 600 s de captura, entrada en 500 s, salida en 505 s.
+        # Cinta cubre ~6.79 min con 20 simbolos (bytes-limited), pero
+        # la salida queda dentro de la cinta. Sin embargo, si ponemos
+        # max_symbols=1 y max_bytes muy bajo, la salida queda fuera.
+        cfg = rp.PilotConfig(run_id="b3", out_dir=self.tmp / "b3",
+                             duration_seconds=600, max_symbols=1,
+                             quote_tape_enabled=True,
+                             quote_tape_max_bytes=100,  # muy pocas filas caben
+                             quote_tape_ultima_entrada_ms=500_000,
+                             quote_tape_fin_feed_ms=600_000)
+        presupuesto = rp.compute_budget(cfg)
+        cinta = presupuesto["cotizaciones_investigacion"]
+        self.assertFalse(cinta["cubre_hasta_ultima_salida"])
+        self.assertFalse(cinta["cubre_instantes_entrada_salida"])
+
+    def test_cubre_hasta_ultima_salida_si_cubre(self):
+        """Cinta cubre entrada + 5 min cuando hay suficientes filas/bytes."""
+        cfg = rp.PilotConfig(run_id="b4", out_dir=self.tmp / "b4",
+                             duration_seconds=600, max_symbols=20,
+                             quote_tape_enabled=True,
+                             quote_tape_max_rows=100_000,
+                             quote_tape_max_bytes=10 * 1024 * 1024,  # 10 MiB
+                             quote_tape_ultima_entrada_ms=100_000,
+                             quote_tape_fin_feed_ms=600_000)
+        presupuesto = rp.compute_budget(cfg)
+        cinta = presupuesto["cotizaciones_investigacion"]
+        self.assertTrue(cinta["cubre_hasta_ultima_salida"])
+        # Presupuesto general aprobado != cobertura de cinta.
+        self.assertTrue(presupuesto["gate"]["cabe_en_limites"])
+
+    def test_sin_ultima_entrada_no_declara_cobertura(self):
+        """Sin ultima_entrada ni fin_feed no se declara cobertura de extremos."""
+        cfg = rp.PilotConfig(run_id="b5", out_dir=self.tmp / "b5",
+                             duration_seconds=600, max_symbols=1,
+                             quote_tape_enabled=True,
+                             quote_tape_max_rows=100_000,
+                             quote_tape_max_bytes=10 * 1024 * 1024)
+        presupuesto = rp.compute_budget(cfg)
+        cinta = presupuesto["cotizaciones_investigacion"]
+        self.assertFalse(cinta["cubre_hasta_ultima_salida"])
+
+    def test_agotamiento_por_bytes_sin_marca_en_jsonl(self):
+        """Agotamiento real por bytes sin fila limite en el JSONL: el piloto
+        persiste el instante y motivo en resumen.json; el replay lee solo
+        artefactos persistidos y devuelve LIMITE_ALCANZADO tras el corte."""
+        simbolo = UNIVERSE[0]
+        run = self._start(
+            quote_tape=True, quote_tape_max_rows=10_000,
+            quote_tape_max_bytes=450,  # cabe una fila (~300 B) pero no dos
+        )
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+
+        # Primera cotizacion cabe; la segunda no (no hay espacio ni para
+        # la fila ni para la marca limite).
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+        # Segundo intento en segundo distinto: supera el tope de bytes.
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada + 1_000, "bid": "100.1", "ask": "100.3",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada + 1_000, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        # El JSONL tiene una cotizacion pero NO fila limite (no cabio).
+        n_cot = sum(1 for f in filas if f.get("kind") == "cotizacion")
+        n_lim = sum(1 for f in filas if f.get("kind") == "limite")
+        self.assertEqual(n_cot, 1)
+        self.assertEqual(n_lim, 0)
+
+        # resumen.json conserva el agotamiento (artefacto fuera del JSONL).
+        resumen = json.loads(
+            (run.out_dir / "resumen.json").read_text(encoding="utf-8"))
+        cinta_estado = resumen["cotizaciones_investigacion"]
+        self.assertTrue(cinta_estado["cap_reached"])
+        self.assertIsNotNone(cinta_estado["cap_instante_ms"])
+        self.assertIn(cinta_estado["cap_reason"], ("limite_bytes",))
+
+        # Replay con agotamiento desde el artefacto persistido.
+        agotamiento = {
+            "instante_ms": cinta_estado["cap_instante_ms"],
+            "motivo": cinta_estado["cap_reason"],
+        }
+        salida = entrada + 5 * MINUTE
+
+        # Consulta EN el corte: LIMITE_ALCANZADO (aunque no hay fila
+        # limite en el JSONL, el artefacto persistido lo acredita).
+        sel_en_corte = qt.seleccionar(simbolo, entrada, filas, run_id=RUN_ID,
+                                      agotamiento=agotamiento)
+        self.assertEqual(sel_en_corte["motivo"], "LIMITE_ALCANZADO")
+        self.assertIsNone(sel_en_corte["cotizacion"])
+
+        # Consulta DESPUES del corte: LIMITE_ALCANZADO.
+        sel_despues = qt.seleccionar(simbolo, salida, filas, run_id=RUN_ID,
+                                     agotamiento=agotamiento)
+        self.assertEqual(sel_despues["motivo"], "LIMITE_ALCANZADO")
+        self.assertIsNone(sel_despues["cotizacion"])
+
+        # Consulta para un simbolo sin datos ANTES del corte: SIN_COTIZACION
+        # (el agotamiento global solo rige a partir de cap_instante_ms).
+        sel_otro = qt.seleccionar("ZZZUSDT", entrada - 1000, filas,
+                                  run_id=RUN_ID, agotamiento=agotamiento)
+        self.assertEqual(sel_otro["motivo"], "SIN_COTIZACION")
+
+        # El piloto siguio guardando observaciones normales tras el agotamiento.
+        obs = trp.read_rows(run.obs_path)
+        self.assertGreaterEqual(len(obs), 1)
 
     def test_budget_only_quote_tape_sin_red(self):
         out = self.tmp / "presupuesto"
