@@ -1,5 +1,67 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-18 — salida temprana al primer cambio observable (sin mercado)
+
+**Autorizacion humana (2026-11-18, continuacion):** sobre la base publicada
+`eac06450f0020a12fc09e51ce02e4424fae0fb9d`, medir si cerrar en el primer cambio
+observable, manteniendo la entrada original de las 143 anclas congeladas, recorta
+mas perdidas de las ganancias que sacrifica. Solo lectura de
+`exp-v2-ventana-4-20261116a` y de los derivados publicados; sin Binance,
+consultas publicas, capturas nuevas, ordenes, cambios de
+patron/umbral/horizonte/entrada/direccion/agrupacion, sin variante nueva y sin
+inversion del patron. `opencode.json` y archivos ajenos no se tocan.
+
+**Hecho:** `scripts/salida_temprana_ventana4.py` (version `salida-temprana-v1`)
+reutiliza `replay_patron_ventana4`, `comparar_anclas_ventana4`,
+`diagnostico_cuatro_casos_ventana4` y `diagnostico_factores_ventana4` sin tocar
+umbrales, y verifica 143/143 anclas y 858/858 bloques contra lo publicado. Reglas
+fijadas antes de calcular: contrato, direccion y entrada congelados; salida
+original a 5 min; primer cambio por la prioridad publicada; disponibilidad =
+maximo de los datos que acreditan el cambio (el cierre del bloque no basta);
+salida alternativa = apertura exacta del primer minuto estrictamente posterior,
+solo si es estrictamente anterior a la salida original; sin saltar velas; hueco
+antes del primer cambio = no evaluable, nunca "sin cambio"; 16 bps iguales en
+ambos lados; funding `UNKNOWN`; menos de 30 pares adelantados = `INSUFICIENTE`.
+
+**Resultado verificable:** 143 = 28 no evaluables por resultado original no
+resoluble (23 sin velas del simbolo, 5 sin vela de entrada) + 9 no evaluables por
+hueco en `b_0` (`flujo_incompleto`) + 106 adelantadas; 0 conservadas. Todo ancla
+con resultado original resoluble y `b_0` utilizable cumple la regla publicada, y
+en 99 de 106 el cambio aparece en `b_0` (93.4 %): la regla publicada no discrimina
+y la alternativa equivale a "salir un minuto despues de entrar". Disponibilidad
+mediana entrada+710 ms (min 149 ms, max 121 918 ms; 7 casos >= 60 s); 0 cambios
+disponibles antes de la entrada. Sobre los 106 pares: delta medio +4.68 bps,
+mediana -2.87, suma +495.62, 48/55/3, rango -278.73/+452.22. Perdidas recortadas
+41 (+3 441.98 bps) frente a ganancias sacrificadas 44 (-2 860.28), mas 10
+perdidas empeoradas (-209.42), 6 ganancias extra (+119.32) y 2 neutros (+4.01).
+LONG 52: -3.14/-4.36; SHORT 54: +12.20/-1.42 -> ninguna direccion consistente.
+Por tipo: giro 65 (+3.56/-4.94), debilitamiento 22 (-7.33/-14.39), precio sin
+avance 6 (+13.54/+7.73), profundidad 13 (+26.50/+9.99). Con 16 bps: neto medio
+original -22.59 y alternativo -17.92 (delta invariante); pares con neto > 0: 41
+frente a 25. Las 4 anclas del patron: BLESS 19:30 +104.54, BLESS 20:06 +175.10,
+ARIA +123.25 y STRK no evaluable (`flujo_incompleto` en `b_0`).
+
+**Conclusion:** `SIN_DIRECCION_CLARA`. Recorta perdidas pero sacrifica una
+cantidad comparable de ganancias; la media positiva depende de la cola derecha y
+la mediana es negativa. No se declara mejora, edge ni rentabilidad y no se
+autoriza promover la regla: esta ventana no valida la salida temprana.
+
+**Pruebas:** `tests/test_salida_temprana_ventana4.py` 26 passed; regresion
+focalizada 143 passed, exit 0. La suite completa conserva los fallos
+preexistentes en modulos ajenos ya documentados.
+
+**Evidencias:** `docs/evidence/salida-temprana-ventana4-20261118/` (README, A
+comando/exit 0/determinismo/hashes, B 143 passed, C resumen JSON, D verificacion
+independiente 2 801/2 801); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-salida-temprana-v1\`.
+Fuentes intactas: `research.db` `6ad6f716...a7f1`, `consultas_klines.jsonl`
+`4ee61463...a61874`, `C-cobertura-real.json` `39652bf0...f4bd`,
+`anclas_cambios.jsonl` `6ca94a94...db3ea`.
+
+**Siguiente:** ninguna prueba automatica. Cualquier uso de la salida temprana como
+regla exige autorizacion humana explicita, selectividad predeclarada y `run_id`
+nuevo con >= 30 pares por grupo.
+
 ## Bloque 2026-11-18 — diagnostico de factores de los cuatro casos (sin mercado)
 
 **Autorizacion humana (2026-11-18, continuacion):** sobre la base publicada

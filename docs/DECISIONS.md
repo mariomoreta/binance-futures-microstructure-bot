@@ -6464,3 +6464,71 @@ fuera de Git en
 `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1\`.
 Verificación independiente 737/737. Pruebas: 39 nuevas + 78 de regresión
 focalizada = 117 passed, exit 0.
+
+## 2026-11-18 - Salida temprana al primer cambio observable (ventana 4): sin dirección clara
+
+**Contexto.** Autorización humana (2026-11-18) sobre la base publicada
+`eac06450f0020a12fc09e51ce02e4424fae0fb9d` para medir, manteniendo la entrada
+original de las 143 anclas congeladas, si cerrar en el primer cambio observable
+recorta más pérdidas de las ganancias que sacrifica. Solo lectura de la captura y
+de sus derivados publicados; sin Binance, capturas nuevas, órdenes, cambios de
+patrón/umbral/horizonte/entrada/dirección/agrupación ni variante operativa nueva.
+
+**Reglas fijadas antes de calcular.** Contrato, dirección y entrada congelados:
+`entrada = (corte // 60 s + 1)·60 s`, apertura exacta; salida original =
+`entrada + 5 min`, apertura exacta. Cambio = primer bloque `b_0..b_5` que cumpla
+la regla publicada, con la prioridad publicada `giro > debilitamiento >
+precio_sin_avance > profundidad_deja_de_caer` y sus umbrales sin ajustar; se
+comprobó que `b_0` empieza en el cierre nominal de la tercera ventana en las 143
+anclas. Disponibilidad = máximo de los tiempos de los datos que acreditan el
+cambio: `max(fin, as_of del flujo)`, más el `as_of` del cierre base solo para
+`precio_sin_avance` y el `as_of` del libro solo para `profundidad`; el cierre del
+bloque por sí solo no basta. Se registra también la disponibilidad amplia
+publicada y se informa si cambia el minuto de salida (no cambió en ningún caso).
+Salida alternativa = apertura exacta del primer minuto **estrictamente posterior**
+a esa disponibilidad, solo si es **estrictamente anterior** a la salida original;
+el minuto es resolución de precio, no disparador. Vela exacta obligatoria: ausente,
+contradictoria o con apertura no positiva = `no_evaluable`, sin saltar nunca a una
+vela posterior. Primer bloque relevante no utilizable antes de cualquier cambio =
+`no_evaluable` / `hueco_antes_del_primer_cambio`, nunca "sin cambio". `b_4`/`b_5`
+cierran después de la salida original y no pueden adelantarla. `b_0` se admite como
+cambio posterior a la entrada porque cubre el primer minuto posterior a la ventana
+de señal y su flujo solo está disponible después de la entrada; se verifica que
+ningún cambio resulte disponible antes de la entrada (0 casos). Coste 16 bps de ida
+y vuelta iguales en ambos lados, solo como sensibilidad; funding `UNKNOWN`, no
+simulado. Menos de 30 pares con salida efectivamente adelantada = `INSUFICIENTE`;
+llegar a 30 no valida la regla.
+
+**Resultado.** 143 = 28 (resultado original no resoluble: 23
+`sin_velas_para_simbolo`, 5 `vela_entrada_ausente`) + 9 (hueco en `b_0`,
+`flujo_incompleto`) + 106 adelantadas; 0 conservadas. El cambio aparece en `b_0` en
+99 de 106 (93.4 %), 5 en `b_1` y 2 en `b_2`: la regla publicada no discrimina y la
+alternativa equivale a "salir un minuto después de entrar". Disponibilidad mediana
+`entrada + 710 ms` (mínimo 149 ms, máximo 121 918 ms). Delta sobre 106 pares: media
++4.68 bps, mediana -2.87, suma +495.62, 48/55/3. Pérdidas recortadas 41
+(+3 441.98 bps) frente a ganancias sacrificadas 44 (-2 860.28); 10 pérdidas
+empeoradas (-209.42), 6 ganancias extra (+119.32) y 2 neutros (+4.01). LONG 52:
+-3.14/-4.36; SHORT 54: +12.20/-1.42. Con 16 bps: neto medio -22.59 (original) y
+-17.92 (alternativa), delta invariante; pares con neto > 0: 41 frente a 25. Las
+cuatro anclas del patrón: BLESS 19:30 +104.54, BLESS 20:06 +175.10, ARIA +123.25 y
+STRK no evaluable (`flujo_incompleto` en `b_0`).
+
+**Decisión.** No se crea regla, filtro ni variante operativa; no se invierte el
+patrón, no se reajustan umbrales, horizonte, entrada ni dirección y no se abre otra
+captura. El veredicto es `SIN_DIRECCION_CLARA`: recorta pérdidas y sacrifica
+ganancias en magnitud comparable, la media positiva depende de la cola derecha y la
+mediana es negativa. Esta ventana **no valida** la salida temprana. Cualquier uso
+futuro como regla exige autorización humana explícita, selectividad predeclarada
+(materialidad mínima y tipos con mediana positiva) y `run_id` nuevo con ≥30 pares
+por grupo.
+
+**Evidencia.** `docs/evidence/salida-temprana-ventana4-20261118/`; derivados fuera
+de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-salida-temprana-v1\`.
+Verificación independiente 2 801/2 801; 143/143 anclas y 858/858 bloques contra lo
+publicado; fuentes intactas. Pruebas: 26 nuevas + 117 de regresión focalizada =
+143 passed, exit 0.
+
+**Publicado.** Commit selectivo `eba3d608ebed7870cb81ef18c15cfe21493f14e4`
+(scripts, pruebas y evidencia) y documentación posterior; push normal a
+origin/research/universe-liquidez-v1 con SHA remoto verificado.

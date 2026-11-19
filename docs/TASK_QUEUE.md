@@ -1,5 +1,62 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-18 — salida temprana al primer cambio observable — TERMINADO
+
+`ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
+
+**Base:** `eac06450f0020a12fc09e51ce02e4424fae0fb9d`, rama
+`research/universe-liquidez-v1`. Solo lectura de `exp-v2-ventana-4-20261116a` y de
+los derivados publicados; sin Binance, consultas publicas, capturas nuevas,
+ordenes, cableado productivo, cambios de patron/umbral/horizonte/entrada/
+direccion/agrupacion ni variante operativa. `opencode.json` local y archivos
+ajenos no se tocan.
+
+**Hecho:** `scripts/salida_temprana_ventana4.py` (`salida-temprana-v1`) evalua una
+sola alternativa de salida sobre las 143 anclas congeladas: primer cambio por la
+regla publicada (prioridad giro > debilitamiento > precio sin avance >
+profundidad), disponibilidad = maximo de los datos que lo acreditan, y salida en
+la apertura exacta del primer minuto estrictamente posterior, solo si es anterior
+a la salida original. Entrada, direccion y contrato no se mueven. Sin salto de
+vela; hueco antes del primer cambio = no evaluable. Verifica 143/143 anclas y
+858/858 bloques contra `episodios_referencia_universo_igual.jsonl` y
+`anclas_cambios.jsonl` sin ajustar umbrales. `scripts/verificar_salida_temprana_ventana4.py`
+recalcula todo sin importar el modulo.
+
+**Resultado verificable:** 143 = 28 (resultado original no resoluble: 23 sin velas
+del simbolo, 5 sin vela de entrada) + 9 (hueco en `b_0`, `flujo_incompleto`) + 106
+adelantadas; 0 conservadas. El cambio aparece en `b_0` en 99 de 106 (93.4 %): la
+regla publicada no discrimina. Disponibilidad mediana entrada+710 ms (min 149 ms,
+max 121 918 ms); 0 cambios disponibles antes de la entrada. Delta sobre 106 pares:
+media +4.68 bps, mediana -2.87, suma +495.62, 48 mejoran / 55 empeoran / 3 igualan.
+Perdidas recortadas 41 (+3 441.98) vs ganancias sacrificadas 44 (-2 860.28); 10
+perdidas empeoradas (-209.42), 6 ganancias extra (+119.32), 2 neutros (+4.01).
+LONG 52 -3.14/-4.36; SHORT 54 +12.20/-1.42. Con 16 bps: neto medio -22.59
+(original) y -17.92 (alternativa); delta invariante. Patron: BLESS 19:30 +104.54,
+BLESS 20:06 +175.10, ARIA +123.25; STRK no evaluable.
+
+**Conclusion formal:** `SIN_DIRECCION_CLARA`. Recorta perdidas y sacrifica
+ganancias en magnitud comparable; media positiva solo por la cola derecha, mediana
+negativa. No es `INSUFICIENTE` por conteo (106 >= 30) pero **no valida la regla**.
+No se declara edge ni rentabilidad y no se crea variante operativa.
+
+**Pruebas:** `tests/test_salida_temprana_ventana4.py` 26 passed; regresion
+focalizada 143 passed, exit 0. La suite completa conserva los fallos preexistentes
+en modulos ajenos (`test_engineering_live_window_local`, `test_market_stream_window`,
+`test_session_new_public_market`, `tests/test_engineering_clock_budget.py`
+modificado por el usuario).
+
+**Evidencias:** `docs/evidence/salida-temprana-ventana4-20261118/` (README, A
+comando/exit 0/determinismo/hashes, B pytest, C resumen JSON, D verificacion
+independiente 2 801/2 801); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-salida-temprana-v1\`.
+Fuentes intactas: `research.db` `6ad6f716...a7f1`, `consultas_klines.jsonl`
+`4ee61463...a61874`, `C-cobertura-real.json` `39652bf0...f4bd`,
+`anclas_cambios.jsonl` `6ca94a94...db3ea`.
+
+**Siguiente:** ninguna prueba automatica. Usar la salida temprana como regla exige
+autorizacion humana explicita, selectividad predeclarada (materialidad minima y
+tipos con mediana positiva) y `run_id` nuevo con >= 30 pares por grupo.
+
 ## Bloque 2026-11-18 — diagnostico de factores de los cuatro casos — TERMINADO
 
 `ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
