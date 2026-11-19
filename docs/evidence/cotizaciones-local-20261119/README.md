@@ -155,10 +155,12 @@ tope de bytes.
      simbolos / 60` (multiplicar por el intervalo entre filas, no dividir).
      Una fila cada 2 s cubre el doble de tiempo que una cada 1 s.
   3. `cotizaciones_investigacion.cubre_hasta_ultima_salida`: si la cinta
-     cubre desde la ultima entrada admitida hasta su salida (entrada + 5 min),
+     cubre desde la ultima entrada admitida hasta su salida (entrada + 300 000 ms),
      verificando que el feed esta previsto hasta ese instante. Requiere
-     `--quote-tape-ultima-entrada-ms` y `--quote-tape-fin-feed-ms`; sin ellos
-     no se declara cobertura.
+     `--quote-tape-ultima-entrada-ms-desde-inicio` (ms desde el inicio de la
+     captura, no hora de epocha). El fin del feed se deriva de
+     `duration_seconds * 1000`; un fin declarado mas tarde no puede extender
+     la cobertura. Sin `ultima_entrada_ms_desde_inicio` no se declara cobertura.
   Una aprobacion del presupuesto general **no acredita** cobertura de
   cotizaciones.
 
@@ -181,19 +183,20 @@ tope de bytes.
   `LIMITE_ALCANZADO` aunque el JSONL no tenga fila `limite`.
 - `scripts/research_pilot.py`: flag, archivo, presupuesto, enganche de lectura
   y de rotacion, estado en `estado.json` y `resumen.json`.
-- `tests/test_quote_tape.py`: 39 pruebas puras (cadencia, esquema, calidad,
+- `tests/test_quote_tape.py`: 40 pruebas puras (cadencia, esquema, calidad,
   seleccion, limites, descomposicion, maquina de cobertura, orden de estados
   en el mismo milisegundo, agotamiento sin marca, cinta agotada distinguible
-  de sin cotizacion).
-- `tests/test_cotizaciones_local_piloto.py`: 18 pruebas de cadena completa
+  de sin cotizacion, evaluar_episodio con agotamiento).
+- `tests/test_cotizaciones_local_piloto.py`: 22 pruebas de cadena completa
   (trazas LONG/SHORT, exclusiones, rotacion, limite, desactivado,
   presupuesto con/sin red, recuperacion de cobertura despues de invalidez,
   invalidez sin recuperacion, invalidez posterior a entrada, cinta agotada
   antes de salida, agotamiento por bytes sin marca en JSONL, cadencia 2 s,
-  cobertura hasta ultima salida).
+  cobertura hasta ultima salida, replay desde resumen.json, CLI presupuesto
+  positivo/negativo/unidades incompatibles).
 - `scripts/generar_evidencia_cotizaciones_local.py`: regenera
   `C-evidencia.json` con el mismo recorrido deterministico.
-- Verificacion: `57 passed` en los dos archivos de prueba del registro.
+- Verificacion: `60 passed` en los dos archivos de prueba del registro.
 - Comandos: `python -m pytest tests\test_quote_tape.py tests\test_cotizaciones_local_piloto.py -q`
   y `python scripts\generar_evidencia_cotizaciones_local.py`.
 

@@ -253,6 +253,7 @@ class QuoteTape:
             "cap_reached": self.cap_reached,
             "cap_reason": self.cap_reason,
             "cap_instante_ms": self.cap_instante_ms,
+            "run_id": self.run_id,
         }
 
 
@@ -451,16 +452,25 @@ def evaluar_episodio(
     run_id: Optional[str] = None, max_edad_ms: int = MAX_EDAD_MS,
     precio_ref_entrada: Optional[float] = None,
     precio_ref_salida: Optional[float] = None,
+    agotamiento: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Compara retorno de referencia y retorno cruzando el spread, una vez."""
+    """Compara retorno de referencia y retorno cruzando el spread, una vez.
+
+    ``agotamiento`` es la evidencia de agotamiento de la cinta leida de un
+    artefacto persistido del piloto (resumen.json). Se aplica a ambos
+    extremos: la entrada anterior al corte se conserva, la salida posterior
+    se rechaza con LIMITE_ALCANZADO.
+    """
     lado = str(lado).upper()
     if lado not in ("LONG", "SHORT"):
         raise ValueError("lado debe ser LONG o SHORT")
     size_f = float(size)
     entradas = seleccionar(symbol, entrada_ms, filas, run_id=run_id,
-                           max_edad_ms=max_edad_ms)
+                           max_edad_ms=max_edad_ms,
+                           agotamiento=agotamiento)
     salidas = seleccionar(symbol, salida_ms, filas, run_id=run_id,
-                          max_edad_ms=max_edad_ms)
+                          max_edad_ms=max_edad_ms,
+                          agotamiento=agotamiento)
     resultado: Dict[str, Any] = {
         "version": VERSION,
         "symbol": str(symbol).upper(),

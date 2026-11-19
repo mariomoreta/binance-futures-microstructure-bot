@@ -382,6 +382,69 @@ class TestSeleccion(unittest.TestCase):
         self.assertEqual(sel["cotizacion"]["seq"], 1)
         self.assertEqual(sel["rechazadas_posteriores"], 1)
 
+    def test_evaluar_episodio_con_agotamiento_entrada_valida_salida_rechazada(self):
+        """evaluar_episodio con agotamiento: entrada antes del corte se
+        conserva, salida despues del corte se rechaza con LIMITE_ALCANZADO."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        # La cinta se agoto en 1_000_000 (despues de la entrada en 999_000,
+        # pero antes de la salida en 1_500_000).
+        agotamiento = {"instante_ms": 1_000_000, "motivo": "limite_bytes"}
+
+        ev = qt.evaluar_episodio(
+            "AAAUSDT", 999_000, 1_500_000, "LONG", qt.TAMANO_SIMULADO,
+            filas, run_id="a", agotamiento=agotamiento)
+        self.assertFalse(ev["evaluable"])
+        # La entrada esta antes del corte: se conserva.
+        self.assertIsNotNone(ev["fila_entrada"])
+        self.assertEqual(ev["motivo_entrada"], None)
+        # La salida esta despues del corte: rechazada.
+        self.assertIsNone(ev["fila_salida"])
+        self.assertEqual(ev["motivo_salida"], "LIMITE_ALCANZADO")
+        self.assertTrue(ev["motivo"].startswith("SIN_COTIZACION_SALIDA:"),
+                        ev)
+
+    def test_evaluar_episodio_con_agotamiento_sin_instante_unknown(self):
+        """evaluar_episodio con agotamiento sin instante conocido:
+        COBERTURA_UNKNOWN para el tramo no acreditado."""
+        # Sin filas: no hay cotizacion para ningun extremo.
+        filas = []
+        agotamiento = {"instante_ms": None, "motivo": "limite_bytes"}
+
+        ev = qt.evaluar_episodio(
+            "AAAUSDT", 999_000, 1_500_000, "LONG", qt.TAMANO_SIMULADO,
+            filas, run_id="a", agotamiento=agotamiento)
+        self.assertFalse(ev["evaluable"])
+        # Sin filas y sin instante de agotamiento conocido: UNKNOWN para entrada.
+        self.assertEqual(ev["motivo_entrada"], "COBERTURA_UNKNOWN")
+        self.assertTrue(ev["motivo"].startswith("SIN_COTIZACION_ENTRADA:"),
+                        ev)
+
+    def test_evaluar_episodio_sin_agotamiento_evaluable(self):
+        """evaluar_episodio sin agotamiento: entrada y salida son evaluables
+        normalmente (regresion del comportamiento previo)."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 1_500_000, "event_ms": 1_500_000, "seq": 2,
+             "best_bid": 100.4, "best_ask": 100.6, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.5, "valida": True},
+        ]
+
+        ev = qt.evaluar_episodio(
+            "AAAUSDT", 999_000, 1_500_000, "LONG", qt.TAMANO_SIMULADO,
+            filas, run_id="a")
+        self.assertTrue(ev["evaluable"], ev)
+        self.assertEqual(ev["precio_entrada"], 100.2)
+        self.assertEqual(ev["precio_salida"], 100.4)
+
 
 class TestEvaluacion(unittest.TestCase):
     def setUp(self):

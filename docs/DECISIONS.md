@@ -6631,3 +6631,46 @@ No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de estrate
 
 Evidencia: `--budget-only` con 20 simbolos, cadencia 1 s, duracion 600 s, ultima entrada en 100 s y fin del feed en 600 s: `minutos_cubiertos_por_tope: 6.7925`, `cubre_hasta_ultima_salida: true`, `cubre_instantes_entrada_salida: false`, `filas_efectivas: 8151`, `filas_marca_reservadas: 41`, `gate.cabe_en_limites: true`. Con cadencia 2 s: `minutos_cubiertos_por_tope: 13.585` (el doble).
 
+
+## 2026-11-19 - cierre: replay conectado al agotamiento persistido y presupuesto alineado al reloj del piloto
+
+Base publicada: `e8d8779f137f6505b0216f86188331b6ca8b849f`, rama `fix/quote-tape-validity-coverage`.
+
+Se conecta el replay al agotamiento persistido: `evaluar_episodio()` acepta un
+parametro `agotamiento` que se lee de `resumen.json` (`cotizaciones_investigacion.cap_reached`,
+`cap_reason`, `cap_instante_ms`, `run_id`) y se aplica a ambos extremos.
+La entrada anterior al corte se conserva; la salida posterior se rechaza con
+`LIMITE_ALCANZADO`. Si consta agotamiento pero no se conoce el instante, se
+declara `COBERTURA_UNKNOWN` para el tramo no acreditado. Se agrega `run_id`
+al `status()` de `QuoteTape` para que el replay pueda verificar que JSONL y
+resumen.json corresponden a la misma corrida.
+
+Se alinea el presupuesto de `--budget-only` con el reloj del piloto:
+- Unica convención: milisegundos desde el inicio programado de la captura.
+- CLI: `--quote-tape-ultima-entrada-ms-desde-inicio` (reemplaza
+  `--quote-tape-ultima-entrada-ms` y `--quote-tape-fin-feed-ms`, que se
+  eliminan). El fin del feed se deriva de `duration_seconds * 1000`.
+- Ultima salida = ultima entrada + 300 000 ms.
+- `cubre_hasta_ultima_salida` verifica capacidad de cinta, cierre real del
+  feed y que la salida no este despues del cierre. El periodo de settle no
+  añade cobertura si el feed ya está cerrado. Un fin declarado mas tarde no
+  puede extender la cobertura. Sin `ultima_entrada_ms_desde_inicio` no se
+  declara cobertura.
+- El gate general del piloto (`gate.cabe_en_limites`) se mantiene separado.
+
+Se agregan pruebas enfocadas: `tests/test_quote_tape.py` de 33 a 40 pruebas;
+`tests/test_cotizaciones_local_piloto.py` de 11 a 22 pruebas. `60 passed` en
+conjunto, 111 passed con regresiones. Evidencia actualizada en
+`docs/evidence/cotizaciones-local-20261119/README.md`.
+
+Casos CLI verificados:
+- Positivo: `cubre_hasta_ultima_salida: true`, `cabe_en_limites: true`.
+- Negativo (feed cerrado): `cubre_hasta_ultima_salida: false`,
+  `cabe_en_limites: true`.
+- Unidades incompatibles (hora de epocita): `cubre_hasta_ultima_salida: false`,
+  `cabe_en_limites: true`.
+
+No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de
+estrategia, selector, horizonte o dashboard. El bloque termina con aceptacion
+local documentada.
+

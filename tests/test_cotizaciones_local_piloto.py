@@ -493,32 +493,42 @@ class TestPresupuesto(Base):
             2 * b1["minutos_cubiertos_por_tope"], places=4)
 
     def test_cubre_hasta_ultima_salida_entrada_tarde(self):
-        """Entrada tardia cuya salida queda fuera aunque el presupuesto
-        general apruebe: cubre_hasta_ultima_salida es False."""
-        # 600 s de captura, entrada en 500 s, salida en 505 s.
-        # Cinta cubre ~6.79 min con 20 simbolos (bytes-limited), pero
-        # la salida queda dentro de la cinta. Sin embargo, si ponemos
-        # max_symbols=1 y max_bytes muy bajo, la salida queda fuera.
+        """Entrada tardia cuya salida queda despues del cierre real del feed:
+        cubre_hasta_ultima_salida es False aunque el presupuesto general
+        apruebe.
+
+        Convencion: milisegundos desde el inicio programado de la captura.
+        duration_seconds=600 -> feed cierra en 600_000 ms. Entrada en
+        500_000 ms, salida en 800_000 ms (500_000 + 300_000). La salida cae
+        despues del cierre del feed, por lo que no hay cobertura.
+        """
         cfg = rp.PilotConfig(run_id="b3", out_dir=self.tmp / "b3",
                              duration_seconds=600, max_symbols=1,
                              quote_tape_enabled=True,
-                             quote_tape_max_bytes=100,  # muy pocas filas caben
-                             quote_tape_ultima_entrada_ms=500_000,
-                             quote_tape_fin_feed_ms=600_000)
+                             quote_tape_max_rows=100_000,
+                             quote_tape_max_bytes=10 * 1024 * 1024,  # 10 MiB
+                             quote_tape_ultima_entrada_ms_desde_inicio=500_000)
         presupuesto = rp.compute_budget(cfg)
         cinta = presupuesto["cotizaciones_investigacion"]
         self.assertFalse(cinta["cubre_hasta_ultima_salida"])
-        self.assertFalse(cinta["cubre_instantes_entrada_salida"])
+        # cubre_instantes_entrada_salida es sobre capacidad general de la
+        # cinta vs horizonte, no sobre una entrada/salida específica.
 
     def test_cubre_hasta_ultima_salida_si_cubre(self):
-        """Cinta cubre entrada + 5 min cuando hay suficientes filas/bytes."""
+        """Cinta cubre entrada + 5 min cuando hay suficientes filas/bytes
+        y el feed esta abierto hasta la salida.
+
+        Convencion: milisegundos desde el inicio. duration_seconds=600 ->
+        feed cierra en 600_000 ms. Entrada en 100_000 ms, salida en
+        400_000 ms (100_000 + 300_000). La salida esta antes del cierre
+        del feed y dentro de la capacidad de la cinta.
+        """
         cfg = rp.PilotConfig(run_id="b4", out_dir=self.tmp / "b4",
                              duration_seconds=600, max_symbols=20,
                              quote_tape_enabled=True,
                              quote_tape_max_rows=100_000,
                              quote_tape_max_bytes=10 * 1024 * 1024,  # 10 MiB
-                             quote_tape_ultima_entrada_ms=100_000,
-                             quote_tape_fin_feed_ms=600_000)
+                             quote_tape_ultima_entrada_ms_desde_inicio=100_000)
         presupuesto = rp.compute_budget(cfg)
         cinta = presupuesto["cotizaciones_investigacion"]
         self.assertTrue(cinta["cubre_hasta_ultima_salida"])
@@ -609,6 +619,140 @@ class TestPresupuesto(Base):
         # El piloto siguio guardando observaciones normales tras el agotamiento.
         obs = trp.read_rows(run.obs_path)
         self.assertGreaterEqual(len(obs), 1)
+
+    def test_replay_agotamiento_desde_resumen_json(self):
+        """Recorrido completo desde artefactos persistidos: el piloto agota
+        la cinta por bytes sin escribir marca limite en el JSONL. El replay
+        lee resumen.json y el JSONL, verifica mismo run_id, y aplica el
+        agotamiento a ambos extremos de evaluar_episodio."""
+        simbolo = UNIVERSE[0]
+        run = self._start(
+            quote_tape=True, quote_tape_max_rows=10_000,
+            quote_tape_max_bytes=450,  # cabe una fila pero no dos
+        )
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        # Primera cotizacion cabe (antes del agotamiento).
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada - 2_000, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada - 2_000, depth_symbols=(simbolo,), evaluate=False)
+        # Segundo intento dispara el agotamiento por bytes (cap_instante_ms = entrada - 1000).
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.1", "ask": "100.3",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        # El JSONL tiene una cotizacion pero NO fila limite.
+        n_cot = sum(1 for f in filas if f.get("kind") == "cotizacion")
+        n_lim = sum(1 for f in filas if f.get("kind") == "limite")
+        self.assertEqual(n_cot, 1)
+        self.assertEqual(n_lim, 0)
+
+        # Leer el estado de la cinta desde resumen.json (artefacto
+        # persistido, fuera del JSONL).
+        resumen = json.loads(
+            (run.out_dir / "resumen.json").read_text(encoding="utf-8"))
+        cinta_estado = resumen["cotizaciones_investigacion"]
+        self.assertTrue(cinta_estado["cap_reached"])
+        self.assertIsNotNone(cinta_estado["cap_instante_ms"])
+        self.assertEqual(cinta_estado["run_id"], RUN_ID)
+
+        # Verificar que el run_id del JSONL coincide con el de resumen.json.
+        for f in filas:
+            if f.get("kind") == "cotizacion":
+                self.assertEqual(f.get("run_id"), RUN_ID)
+
+        # Aplicar el agotamiento a ambos extremos del episodio.
+        agotamiento = {
+            "instante_ms": cinta_estado["cap_instante_ms"],
+            "motivo": cinta_estado["cap_reason"],
+        }
+
+        # La entrada esta antes del corte: se conserva como valida.
+        ev = qt.evaluar_episodio(
+            simbolo, entrada - 2_000, salida, "LONG", qt.TAMANO_SIMULADO,
+            filas, run_id=RUN_ID, agotamiento=agotamiento)
+        self.assertFalse(ev["evaluable"], ev)
+        self.assertIsNotNone(ev["fila_entrada"])
+        self.assertEqual(ev["motivo_entrada"], None)
+        self.assertIsNone(ev["fila_salida"])
+        self.assertEqual(ev["motivo_salida"], "LIMITE_ALCANZADO")
+        self.assertTrue(ev["motivo"].startswith("SIN_COTIZACION_SALIDA:"),
+                        ev)
+
+        # El piloto siguio guardando observaciones normales tras el agotamiento.
+        obs = trp.read_rows(run.obs_path)
+        self.assertGreaterEqual(len(obs), 1)
+
+    def test_budget_only_cubre_hasta_ultima_salida_positivo(self):
+        """--budget-only: plan que cubre hasta la ultima salida."""
+        out = self.tmp / "presupuesto-pos"
+        cmd = [sys.executable, str(ROOT / "scripts" / "research_pilot.py"),
+               "--run-id", "budget-pos", "--out-dir", str(out),
+               "--mode", "local", "--budget-only", "--quote-tape",
+               "--duration-seconds", "600", "--max-symbols", "1",
+               "--max-candidates", "1", "--max-comparators", "0",
+               "--quote-tape-max-rows", "100000",
+               "--quote-tape-max-bytes", str(10 * 1024 * 1024),
+               "--quote-tape-ultima-entrada-ms-desde-inicio", "100000"]
+        proc = subprocess.run(cmd, cwd=str(ROOT), capture_output=True,
+                              text=True, timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        data = json.loads((out / "presupuesto.json").read_text(encoding="utf-8"))
+        cinta = data["cotizaciones_investigacion"]
+        self.assertTrue(cinta["cubre_hasta_ultima_salida"])
+        self.assertTrue(data["gate"]["cabe_en_limites"])
+
+    def test_budget_only_cubre_hasta_ultima_salida_negativo_feed_cerrado(self):
+        """--budget-only: capacidad de cinta suficiente pero salida despues
+        del cierre real del feed. cubre_hasta_ultima_salida es False."""
+        out = self.tmp / "presupuesto-neg"
+        cmd = [sys.executable, str(ROOT / "scripts" / "research_pilot.py"),
+               "--run-id", "budget-neg", "--out-dir", str(out),
+               "--mode", "local", "--budget-only", "--quote-tape",
+               "--duration-seconds", "600", "--max-symbols", "1",
+               "--max-candidates", "1", "--max-comparators", "0",
+               "--quote-tape-max-rows", "100000",
+               "--quote-tape-max-bytes", str(10 * 1024 * 1024),
+               "--quote-tape-ultima-entrada-ms-desde-inicio", "500000"]
+        proc = subprocess.run(cmd, cwd=str(ROOT), capture_output=True,
+                              text=True, timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        data = json.loads((out / "presupuesto.json").read_text(encoding="utf-8"))
+        cinta = data["cotizaciones_investigacion"]
+        self.assertFalse(cinta["cubre_hasta_ultima_salida"])
+        self.assertTrue(data["gate"]["cabe_en_limites"])
+
+    def test_budget_only_unidades_incompatibles_sin_cobertura(self):
+        """--budget-only: si se pasa una hora de epocita como si fuera ms
+        desde el inicio, la salida queda muy mas alla del cierre del feed
+        y nunca se aprueba cobertura."""
+        out = self.tmp / "presupuesto-incomp"
+        cmd = [sys.executable, str(ROOT / "scripts" / "research_pilot.py"),
+               "--run-id", "budget-incomp", "--out-dir", str(out),
+               "--mode", "local", "--budget-only", "--quote-tape",
+               "--duration-seconds", "600", "--max-symbols", "1",
+               "--max-candidates", "1", "--max-comparators", "0",
+               "--quote-tape-max-rows", "100000",
+               "--quote-tape-max-bytes", str(10 * 1024 * 1024),
+               # Valor de epocita (~1.7 billones) interpretado como ms
+               # desde el inicio: salida >> cierre del feed.
+               "--quote-tape-ultima-entrada-ms-desde-inicio", "1735689720000"]
+        proc = subprocess.run(cmd, cwd=str(ROOT), capture_output=True,
+                              text=True, timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        data = json.loads((out / "presupuesto.json").read_text(encoding="utf-8"))
+        cinta = data["cotizaciones_investigacion"]
+        self.assertFalse(cinta["cubre_hasta_ultima_salida"])
 
     def test_budget_only_quote_tape_sin_red(self):
         out = self.tmp / "presupuesto"

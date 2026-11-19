@@ -1521,12 +1521,15 @@ class PilotConfig:
     quote_tape_max_rows: int = COTIZACIONES_LIMITE_FILAS
     quote_tape_max_bytes: int = COTIZACIONES_LIMITE_BYTES
     quote_tape_cadencia_ms: int = COTIZACIONES_CADENCIA_MS
-    # Ultima entrada admitida (ms de epoch) y fin previsto del feed (ms de
-    # epoch). Si se especifican, el presupuesto indica si la cinta cubre
-    # desde la primera entrada hasta la ultima salida (entrada + 5 min).
-    # Sin ellos no se declara cobertura de extremos.
-    quote_tape_ultima_entrada_ms: Optional[int] = None
-    quote_tape_fin_feed_ms: Optional[int] = None
+    # Ultima entrada admitida, en milisegundos desde el inicio programado de
+    # la captura (no hora de epocha). Si se especifica, el presupuesto
+    # indica si la cinta cubre desde esa entrada hasta su salida
+    # (entrada + 300 000 ms). Sin ella no se declara cobertura de extremos.
+    quote_tape_ultima_entrada_ms_desde_inicio: Optional[int] = None
+    # El fin del feed se deriva de duration_seconds * 1000 (instante en que
+    # el piloto cierra el feed). No hay parametro de usuario para
+    # fin_feed_ms: un fin declarado mas tarde no puede extender la cobertura
+    # mas alla de donde el piloto realmente cierra.
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -1573,8 +1576,8 @@ class PilotConfig:
             "quote_tape_max_rows": self.quote_tape_max_rows,
             "quote_tape_max_bytes": self.quote_tape_max_bytes,
             "quote_tape_cadencia_ms": self.quote_tape_cadencia_ms,
-            "quote_tape_ultima_entrada_ms": self.quote_tape_ultima_entrada_ms,
-            "quote_tape_fin_feed_ms": self.quote_tape_fin_feed_ms,
+            "quote_tape_ultima_entrada_ms_desde_inicio": (
+                self.quote_tape_ultima_entrada_ms_desde_inicio),
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
             "protocol_version": PROTOCOL_VERSION,
@@ -1717,22 +1720,27 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                                      minutos_teoricos_por_bytes)
 
     # Coverage de extremos: la cinta debe cubrir desde la ultima entrada
-    # admitida hasta su salida (entrada + 5 min), y el feed debe estar
-    # previsto hasta ese instante. Si no se especifica ultima_entrada ni
-    # fin_feed, no se declara cobertura.
-    entrada_ms = cfg.quote_tape_ultima_entrada_ms
-    fin_feed_ms = cfg.quote_tape_fin_feed_ms
+    # admitida hasta su salida (entrada + 300 000 ms), y el feed debe estar
+    # previsto hasta ese instante. El fin del feed se deriva de
+    # duration_seconds * 1000 (instante en que el piloto cierra el feed).
+    # El periodo de settle no añade cobertura si el feed ya está cerrado.
+    # Un fin declarado más tarde no puede extender la cobertura.
+    # Si no se especifica ultima_entrada_desde_inicio, no se declara cobertura.
+    entrada_ms = cfg.quote_tape_ultima_entrada_ms_desde_inicio
+    salida_ms = (entrada_ms + 300_000) if entrada_ms is not None else None
+    feed_cierra_ms = int(cfg.duration_seconds * 1000)
     cubre_hasta_ultima_salida = False
     if (cfg.quote_tape_enabled and symbols and entrada_ms is not None
-            and fin_feed_ms is not None):
-        salida_ms = entrada_ms + 5 * 60_000  # 5 minutos despues de entrada
-        # Duracion necesaria en segundos desde el inicio del feed hasta la
-        # salida. La cinta empieza en el inicio del capture (t=0 del reloj).
-        segundos_necessarios = (salida_ms) / 1000.0
-        filas_necessarias = math.ceil(segundos_necessarios / cadencia_s) * symbols
+            and salida_ms is not None):
+        # Capacidad efectiva de la cinta en milisegundos desde el inicio:
+        # filas_efectivas * cadencia_s * 1000 / simbolos.
+        capacidad_ms = (filas_efectivas * cadencia_s * 1000.0
+                        / max(1, symbols))
+        filas_necessarias = math.ceil(salida_ms / 1000.0 / cadencia_s) * symbols
         cubre_hasta_ultima_salida = (
             filas_necessarias <= filas_efectivas
-            and fin_feed_ms >= salida_ms)
+            and salida_ms <= feed_cierra_ms
+            and salida_ms <= capacidad_ms)
 
     # La cinta cubre los instantes de entrada y salida si su cobertura
     # efectiva (min de filas/bytes) alcanza el horizonte mas largo. Esta
@@ -4759,13 +4767,12 @@ def build_parser() -> argparse.ArgumentParser:
                    default=COTIZACIONES_LIMITE_BYTES)
     p.add_argument("--quote-tape-cadencia-ms", type=int,
                    default=COTIZACIONES_CADENCIA_MS)
-    p.add_argument("--quote-tape-ultima-entrada-ms", type=int, default=None,
-                   help="ultima entrada admitida (ms de epoch); si se especifica, "
-                        "el presupuesto indica si la cinta cubre hasta la "
-                        "salida (entrada + 5 min)")
-    p.add_argument("--quote-tape-fin-feed-ms", type=int, default=None,
-                   help="fin previsto del feed (ms de epoch); se verifica que "
-                        "la cinta este prevista hasta ese instante")
+    p.add_argument("--quote-tape-ultima-entrada-ms-desde-inicio",
+                   type=int, default=None,
+                   help="ultima entrada admitida, en milisegundos desde el "
+                        "inicio programado de la captura (no hora de epocha). "
+                        "Si se especifica, el presupuesto indica si la cinta "
+                        "cubre hasta la salida (entrada + 300 000 ms)")
     p.add_argument("--funding-calendars", default=None,
                    help="ruta a JSON con calendarios de funding por simbolo "
                         "(clave = simbolo, valor = calendario)")
@@ -4922,8 +4929,8 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         quote_tape_max_rows=int(args.quote_tape_max_rows),
         quote_tape_max_bytes=int(args.quote_tape_max_bytes),
         quote_tape_cadencia_ms=int(args.quote_tape_cadencia_ms),
-        quote_tape_ultima_entrada_ms=args.quote_tape_ultima_entrada_ms,
-        quote_tape_fin_feed_ms=args.quote_tape_fin_feed_ms,
+        quote_tape_ultima_entrada_ms_desde_inicio=(
+            args.quote_tape_ultima_entrada_ms_desde_inicio),
     )
 
 
