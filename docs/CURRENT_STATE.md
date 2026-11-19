@@ -1,5 +1,50 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-19 - registro local de cotizaciones (sin mercado)
+
+**Hecho:** se anadio un registro de investigacion opt-in (`--quote-tape`,
+desactivado por defecto) que reutiliza las features que `BookEngine` ya calcula
+y escribe `cotizaciones_investigacion.jsonl` con el `PilotStore` presupuestado
+del piloto. Guarda mejor bid/ask, cantidad visible en punta, `event_ms`,
+`received_ms`, calidad, `run_id` y simbolo; nunca el libro completo. Cadencia:
+primera lectura aceptada por segundo y simbolo. Topes: 20 000 filas y 4 MiB.
+`quote_tape.leer_tape/seleccionar/evaluar_episodio` recupera la ultima cotizacion
+valida ya recibida en cada instante (maximo 5 000 ms de antiguedad), sin
+desplazar entrada ni salida.
+
+**Predeclaracion:** `docs/evidence/cotizaciones-local-20261119/PREDECLARACION.md`,
+publicada en `43e1238ef19b2dfcd8f41f5e7bb7e12d42ca70c0` antes de implementar o
+probar. Fija antiguedad, tamano simulado 1.0, cadencia, criterios de calidad,
+codigos de exclusion y descomposicion del retorno.
+
+**Resultado:** ACEPTADO LOCALMENTE. Recorrido real con HTTP/WS loopback, reloj
+manual y almacenamiento temporal: trazas LONG (AAAUSDT, entra ask 1000.3 y sale
+bid 999.9) y SHORT (BBBUSDT, entra bid 1010.102 y sale ask 1010.1) recuperadas
+de las filas persistidas en entrada y salida a 5 min. Cruce -3.9988 bps y
++0.0198 bps; spread +1.9992 y +1.9798 bps (una sola resta); comision, slippage,
+funding y neto `UNKNOWN`; precios cotizados, no fills. Rechazos explicitos:
+posterior, vieja, cruzada, salto de secuencia, punta insuficiente y rotacion
+(`SIMBOLO_FUERA_DE_SEGUIMIENTO`). Sin selectores, horizontes, motor ni
+dashboard modificados.
+
+**Presupuesto:** medido 440.6 bytes/fila (3 965 bytes / 9 filas); proyeccion
+conservadora 512 B/fila. Con 20 simbolos la cinta cubre ~16.67 min antes del
+tope de filas y no cubre 4 h (288 000 filas, 147 456 000 bytes). El gate de 4 h
+ya era insuficiente sin la cinta. No se aumentaron cupos ni presupuestos; el
+piloto continua su registro normal al alcanzar el limite. Sin captura publica:
+la cobertura publica sigue sin probar y requiere autorizacion separada.
+
+**Pruebas y evidencia:** 29 pruebas puras + 7 de cadena completa (36 passed);
+bloque focalizado 105 passed, exit 0. `docs/evidence/cotizaciones-local-20261119/`
+(PREDECLARACION publicada, README con schema/trazas/exclusiones/presupuesto y
+`C-evidencia.json` regenerable con
+`scripts/generar_evidencia_cotizaciones_local.py`). Inventario historico
+`0/278`, `DATOS_INSUFICIENTES`, intacto.
+
+**Limite:** este bloque no acredita rentabilidad, fills, comision, slippage,
+funding ni cobertura en captura publica. No se conecto a Binance ni se abrio
+ninguna ventana nueva.
+
 ## Bloque 2026-11-19 - coste de ejecucion con capturas existentes (sin mercado)
 
 **Autorizacion humana:** sobre la base publicada

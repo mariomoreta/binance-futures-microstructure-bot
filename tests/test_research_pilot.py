@@ -334,6 +334,13 @@ class WsProvider:
         self.frames_by_category = {"public": 0, "market": 0}
         self.rejected_paths = []
         self.rejected_streams = []
+        # Carga opcional de punta personalizada para pruebas de cotizaciones.
+        # Por defecto vacio: el comportamiento historico no cambia.
+        self.payloads: dict = {}
+
+    def queue_depth(self, symbol: str, spec: dict) -> None:
+        """Programa un payload de libro (precio/cantidad/E/pu) por simbolo."""
+        self.payloads.setdefault(str(symbol).upper(), []).append(dict(spec))
 
     def set_loop(self, loop) -> None:
         self._loop = loop
@@ -466,15 +473,31 @@ class WsProvider:
             prev = self._u.get(symbol, 1000)
             uid = prev + 1
             self._u[symbol] = uid
-        payload = {
-            "stream": f"{symbol.lower()}@depth20@100ms",
-            "data": {"e": "depthUpdate", "E": instant_ms, "T": instant_ms,
-                     "s": symbol, "U": uid, "u": uid, "pu": prev,
-                     "b": [[f"{base * 0.999:.8f}", "10.0"],
-                           [f"{base * 0.998:.8f}", "5.0"]],
-                     "a": [[f"{base * 1.001:.8f}", "10.0"],
-                           [f"{base * 1.002:.8f}", "5.0"]]},
-        }
+        with self._lock:
+            cola = self.payloads.get(symbol) or []
+            spec = cola.pop(0) if cola else None
+        if spec is None:
+            payload = {
+                "stream": f"{symbol.lower()}@depth20@100ms",
+                "data": {"e": "depthUpdate", "E": instant_ms, "T": instant_ms,
+                         "s": symbol, "U": uid, "u": uid, "pu": prev,
+                         "b": [[f"{base * 0.999:.8f}", "10.0"],
+                               [f"{base * 0.998:.8f}", "5.0"]],
+                         "a": [[f"{base * 1.001:.8f}", "10.0"],
+                               [f"{base * 1.002:.8f}", "5.0"]]},
+            }
+        else:
+            event_ms = int(spec.get("event_ms", instant_ms))
+            prev_id = spec.get("prev_id", prev)
+            payload = {
+                "stream": f"{symbol.lower()}@depth20@100ms",
+                "data": {"e": "depthUpdate", "E": event_ms, "T": event_ms,
+                         "s": symbol, "U": uid, "u": uid, "pu": prev_id,
+                         "b": [[str(spec.get("bid", f"{base * 0.999:.8f}")),
+                                str(spec.get("bid_qty", "10.0"))]],
+                         "a": [[str(spec.get("ask", f"{base * 1.001:.8f}")),
+                                str(spec.get("ask_qty", "10.0"))]]},
+            }
         await websocket.send(json.dumps(payload))
 
     async def _send_trade(self, websocket, symbol: str,
@@ -607,11 +630,16 @@ class PilotRun:
                  funding_wait_seconds: Optional[float] = None,
                  funding_wait_max_queries: Optional[int] = None,
                  funding_rows_fn=None,
-                 moves=None) -> None:
+                 moves=None,
+                 quote_tape=False,
+                 quote_tape_max_rows=None,
+                 quote_tape_max_bytes=None,
+                 quote_tape_cadencia_ms=None) -> None:
         self.tmp = Path(tmp)
         self.universe = list(universe)
         self.out_dir = self.tmp / "out"
         self.obs_path = self.out_dir / "observaciones.jsonl"
+        self.quote_path = self.out_dir / "cotizaciones_investigacion.jsonl"
         self.status_path = self.tmp / "status.json"
         self.gate_path = self.tmp / "gate.json"
         self.stop_path = self.tmp / "stop.txt"
@@ -672,6 +700,15 @@ class PilotRun:
             "--decision-gate-file", str(self.gate_path),
             "--stop-file", str(self.stop_path),
         ]
+        if quote_tape:
+            cmd.append("--quote-tape")
+            if quote_tape_max_rows is not None:
+                cmd.extend(["--quote-tape-max-rows", str(quote_tape_max_rows)])
+            if quote_tape_max_bytes is not None:
+                cmd.extend(["--quote-tape-max-bytes", str(quote_tape_max_bytes)])
+            if quote_tape_cadencia_ms is not None:
+                cmd.extend(["--quote-tape-cadencia-ms",
+                            str(quote_tape_cadencia_ms)])
         if funding_calendars_path:
             cmd.extend(["--funding-calendars", funding_calendars_path])
         if funding_source:

@@ -132,6 +132,15 @@ from microstructure_probe.research_recorder import ResearchRecorder  # noqa: E40
 from microstructure_probe.universe import SymbolUniverse  # noqa: E402
 
 import research_selector  # noqa: E402
+from quote_tape import (  # noqa: E402
+    CADENCIA_MS as COTIZACIONES_CADENCIA_MS,
+    LIMITE_BYTES as COTIZACIONES_LIMITE_BYTES,
+    LIMITE_FILAS as COTIZACIONES_LIMITE_FILAS,
+    BYTES_POR_FILA_ESTIMADOS as COTIZACIONES_BYTES_FILA,
+    NOMBRE_ARCHIVO as COTIZACIONES_NOMBRE,
+    QuoteTape,
+    status_desactivado,
+)
 from research_operativo_adapter import (  # noqa: E402
     OperativoAdapter, OperativoConfig, OperativoTradeResult,
     _vela_plenamente_conocida_en,
@@ -1506,6 +1515,12 @@ class PilotConfig:
     # ambas fuentes) con espera maxima acotada, sin consumir la oportunidad en
     # el corte nominal prematuro.
     capture_protocol_version: int = 3
+    # Registro de investigacion de cotizaciones. Desactivado por defecto y
+    # separado del registro normal: nunca participa en seleccion ni decision.
+    quote_tape_enabled: bool = False
+    quote_tape_max_rows: int = COTIZACIONES_LIMITE_FILAS
+    quote_tape_max_bytes: int = COTIZACIONES_LIMITE_BYTES
+    quote_tape_cadencia_ms: int = COTIZACIONES_CADENCIA_MS
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -1548,6 +1563,10 @@ class PilotConfig:
             "funding_wait_seconds": self.funding_wait_seconds,
             "funding_wait_max_queries": self.funding_wait_max_queries,
             "capture_protocol_version": self.capture_protocol_version,
+            "quote_tape_enabled": self.quote_tape_enabled,
+            "quote_tape_max_rows": self.quote_tape_max_rows,
+            "quote_tape_max_bytes": self.quote_tape_max_bytes,
+            "quote_tape_cadencia_ms": self.quote_tape_cadencia_ms,
             "policy_version": POLICY_VERSION,
             "pilot_version": PILOT_VERSION,
             "protocol_version": PROTOCOL_VERSION,
@@ -1654,6 +1673,14 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
                      + storage_http_ledger + storage_db + storage_aux
                      + storage_klines_bodies)
 
+    # Proyeccion de la cinta de investigacion (desactivada por defecto).
+    cadencia_s = max(1, int(cfg.quote_tape_cadencia_ms)) / 1000.0
+    filas_cinta = (symbols * int(math.ceil(duration / cadencia_s))
+                   if cfg.quote_tape_enabled and duration else 0)
+    bytes_cinta = filas_cinta * COTIZACIONES_BYTES_FILA
+    if cfg.quote_tape_enabled:
+        storage_total += min(bytes_cinta, int(cfg.quote_tape_max_bytes))
+
     # La primera seleccion abre los feeds; cada seleccion posterior puede
     # cambiar el set y reabrir AMBOS feeds (/public y /market).
     ws_connections = 2             # /public (depth) + /market (aggTrade)
@@ -1697,7 +1724,9 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
     storage_accounted_max = (
         storage_jsonl + storage_funding_files
         + runtime_sqlite_quota + runtime_ledger_quota
-        + storage_klines_bodies)
+        + storage_klines_bodies
+        + (min(bytes_cinta, int(cfg.quote_tape_max_bytes))
+           if cfg.quote_tape_enabled else 0))
     gate_checks = {
         "intentos_plan_dentro_del_techo": (
             attempts_with_reserves <= cfg.max_http_attempts),
@@ -1740,6 +1769,22 @@ def compute_budget(cfg: PilotConfig) -> Dict[str, Any]:
         "version": PILOT_VERSION,
         "mode": cfg.mode,
         "gate": budget_gate,
+        "cotizaciones_investigacion": {
+            "enabled": bool(cfg.quote_tape_enabled),
+            "cadencia_ms": int(cfg.quote_tape_cadencia_ms),
+            "max_rows": int(cfg.quote_tape_max_rows),
+            "max_bytes": int(cfg.quote_tape_max_bytes),
+            "bytes_por_fila_estimados": COTIZACIONES_BYTES_FILA,
+            "filas_proyectadas": filas_cinta,
+            "bytes_proyectados": bytes_cinta,
+            "cobertura_captura_completa": (
+                filas_cinta <= int(cfg.quote_tape_max_rows)
+                and bytes_cinta <= int(cfg.quote_tape_max_bytes)),
+            "minutos_cubiertos_por_tope": (
+                int(cfg.quote_tape_max_rows)
+                / max(1, symbols) / max(cadencia_s, 1e-9) / 60.0
+                if cfg.quote_tape_enabled and symbols else 0.0),
+        },
         "supuestos": {
             "duracion_captura_s": duration,
             "periodo_settle_s": settle,
@@ -2070,6 +2115,7 @@ class ResearchPilot:
         # proveedor (el hash del ledger no sustituye a las velas).
         self.klines_log_path = self.out_dir / "consultas_klines.jsonl"
         self.db_path = self.out_dir / "research.db"
+        self.quote_path = self.out_dir / COTIZACIONES_NOMBRE
         self.storage_budget = RunStorageBudget(cfg.max_bytes)
         existing_data_bytes = self._existing_counted_bytes()
         self.sqlite_initial_bytes = self._sqlite_bytes()
@@ -2106,6 +2152,21 @@ class ResearchPilot:
             storage_budget=self.storage_budget,
             storage_key=f"jsonl:{self.klines_log_path}",
         )
+        # Cinta de investigacion: archivo propio, mismo almacenamiento acotado.
+        # Desactivada no abre archivo ni consume presupuesto.
+        self.quote_tape: Optional[QuoteTape] = None
+        if cfg.quote_tape_enabled:
+            quote_store = PilotStore(
+                self.quote_path, 0,
+                storage_budget=self.storage_budget,
+                storage_key=f"jsonl:{self.quote_path}",
+            )
+            self.quote_tape = QuoteTape(
+                quote_store, cfg.run_id,
+                max_rows=cfg.quote_tape_max_rows,
+                max_bytes=cfg.quote_tape_max_bytes,
+                cadencia_ms=cfg.quote_tape_cadencia_ms,
+            )
         self.klines_consultas_por_oid: Dict[str, int] = {}
         self.funding_queries_by_oid: Dict[str, int] = {}
         self.funding_calendars_by_oid: Dict[str, FundingCalendar] = {}
@@ -2278,6 +2339,7 @@ class ResearchPilot:
             + self._file_bytes(self.funding_log_path)
             + self._file_bytes(self.http_ledger_path)
             + self._file_bytes(self.klines_log_path)
+            + self._file_bytes(self.quote_path)
             + funding_bytes
             + self._sqlite_bytes()
         )
@@ -2298,6 +2360,7 @@ class ResearchPilot:
             + self._file_bytes(self.funding_log_path)
             + self._file_bytes(http_ledger_path)
             + self._file_bytes(self.klines_log_path)
+            + self._file_bytes(self.quote_path)
             + self._funding_files_bytes()
             + self._sqlite_bytes()
         )
@@ -2392,6 +2455,11 @@ class ResearchPilot:
                             symbol, int(data.get("E")), features,
                             degraded=bool(state.degraded), gap=bool(gap),
                             crossed=bool(features.get("crossed")))
+                        if self.quote_tape is not None:
+                            self.quote_tape.record_quote(
+                                symbol, int(data.get("E")), recv_ms, features,
+                                degraded=bool(state.degraded), gap=bool(gap),
+                                crossed=bool(features.get("crossed")))
 
     # -- feeds ---------------------------------------------------------
 
@@ -2554,6 +2622,10 @@ class ResearchPilot:
                 self.book.allow([sym])
                 self.flow.allow([sym])
         for sym in sorted(prev - new_set):
+            if self.quote_tape is not None:
+                self.quote_tape.record_missing(
+                    sym, now, "simbolo_fuera_de_seguimiento",
+                    f"ciclo {cycle.cycle_id}; decisiones_pendientes={pending}")
             self.recorder.finalize_symbol(sym)
             self.book.forget(sym)
             self.flow.forget(sym)
@@ -3955,6 +4027,9 @@ class ResearchPilot:
             # reserva, el consumo ni ninguna decision.
             "presupuesto": self.budget.status(),
             "almacenamiento": self.storage_budget.status(),
+            "cotizaciones_investigacion": (
+                self.quote_tape.status() if self.quote_tape is not None
+                else status_desactivado()),
             "duracion_maxima_total_ms": int(
                 (self.cfg.duration_seconds + self.cfg.settle_seconds
                  + self.cfg.funding_wait_seconds) * 1000),
@@ -4415,6 +4490,9 @@ class ResearchPilot:
                 ],
             },
             "presupuesto_http": self.budget.status(),
+            "cotizaciones_investigacion": (
+                self.quote_tape.status() if self.quote_tape is not None
+                else status_desactivado()),
             # Politica presupuestada de esta corrida (estimacion base, reservas
             # y limite efectivo). Permite contrastar el plan con las llamadas
             # realmente observadas sin recalcular nada a mano.
@@ -4601,6 +4679,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="parada explicita del operador (solo --clock manual)")
     p.add_argument("--budget-only", action="store_true",
                    help="calcula y escribe el presupuesto sin red")
+    p.add_argument("--quote-tape", action="store_true",
+                   help="registro de investigacion de best bid/ask; desactivado "
+                        "por defecto, sin efecto en seleccion ni decisiones")
+    p.add_argument("--quote-tape-max-rows", type=int,
+                   default=COTIZACIONES_LIMITE_FILAS)
+    p.add_argument("--quote-tape-max-bytes", type=int,
+                   default=COTIZACIONES_LIMITE_BYTES)
+    p.add_argument("--quote-tape-cadencia-ms", type=int,
+                   default=COTIZACIONES_CADENCIA_MS)
     p.add_argument("--funding-calendars", default=None,
                    help="ruta a JSON con calendarios de funding por simbolo "
                         "(clave = simbolo, valor = calendario)")
@@ -4753,6 +4840,10 @@ def config_from_args(args: argparse.Namespace) -> PilotConfig:
         funding_method=args.funding_method,
         funding_wait_seconds=float(args.funding_wait_seconds),
         funding_wait_max_queries=int(args.funding_wait_max_queries),
+        quote_tape_enabled=bool(args.quote_tape),
+        quote_tape_max_rows=int(args.quote_tape_max_rows),
+        quote_tape_max_bytes=int(args.quote_tape_max_bytes),
+        quote_tape_cadencia_ms=int(args.quote_tape_cadencia_ms),
     )
 
 

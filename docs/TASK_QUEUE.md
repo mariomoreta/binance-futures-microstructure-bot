@@ -1,5 +1,35 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-19 - registro local de cotizaciones - TERMINADO
+
+`ACTIVE_TASK: ninguno` - esperar instruccion del usuario. **No abrir otra
+ventana ni repetir el analisis historico cerrado.**
+
+**Base:** `e5ba321313a05ffd63b38de107592b965d95e665`, rama
+`research/universe-liquidez-v1`. Sin Binance, capturas nuevas, ordenes,
+cambios de selector/estrategia/horizonte/motor/dashboard. `opencode.json` y
+demas cambios ajenos intactos.
+
+**Hecho:** predeclaracion publicada en
+`43e1238ef19b2dfcd8f41f5e7bb7e12d42ca70c0` antes de implementar o probar.
+`--quote-tape` opt-in y desactivado por defecto; `scripts/quote_tape.py` con
+escritor acotado y evaluador; enganche en `scripts/research_pilot.py` sin tocar
+el registro normal. Cadencia de 1 s, maximo 5 000 ms de antiguedad, topes de
+20 000 filas / 4 MiB. Recorrido real con loopback, reloj manual y tmp:
+trazas LONG y SHORT recuperadas de JSONL, exclusiones con codigo explicito,
+rotacion con `faltante`, limite sin detener el piloto y presupuesto con/sin red.
+
+**Verificacion:** 36 pruebas nuevas (29 puras + 7 de cadena), 105 passed en el
+bloque focalizado. Evidencia compacta en
+`docs/evidence/cotizaciones-local-20261119/`; generador reproducible
+`scripts/generar_evidencia_cotizaciones_local.py`.
+
+**Cierre:** ACEPTADO LOCALMENTE. No acredita cobertura publica ni rentabilidad;
+comision, slippage, funding y neto siguen `UNKNOWN`. Reabrir exige autorizacion
+humana, una captura nueva autorizada y una predeclaracion previa a mirar
+retornos. El inventario `0/278` y el veredicto `DATOS_INSUFICIENTES` quedan
+cerrados.
+
 ## Bloque 2026-11-19 - coste de ejecucion con capturas existentes - TERMINADO
 
 `ACTIVE_TASK: ninguno` - esperar instruccion del usuario.
