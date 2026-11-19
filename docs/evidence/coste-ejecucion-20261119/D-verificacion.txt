@@ -1,0 +1,4 @@
+python scripts\verificar_coste_ejecucion.py --inventario C:\proyectos\binance-futures-data\coste-ejecucion-v1\inventario.json --compacto docs\evidence\coste-ejecucion-20261119\C-inventario.json
+
+comprobaciones: 10086 | fallos: 0
+EXIT=0

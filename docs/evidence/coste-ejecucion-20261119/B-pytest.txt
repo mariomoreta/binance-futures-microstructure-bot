@@ -1,0 +1,14 @@
+Comando: python -m pytest <7 archivos> -q
+Archivos:
+  tests/test_coste_ejecucion.py
+  tests/test_extension_previa_v1.py
+  tests/test_replay_patron_ventana4.py
+  tests/test_secuencia_presion_v1.py
+  tests/test_paper_lab_engine.py
+  tests/test_operativo_replay_offline.py
+  tests/test_analisis_contrafactual_ventana4.py
+
+........................................................................ [ 58%]
+...................................................                      [100%]
+123 passed in 37.59s
+EXIT=0
