@@ -418,3 +418,29 @@ contrastable en BLESSUSDT 20:06 (5.35× su mediana previa, −142.02 bps); los
 otros tres quedan `NO_RESOLUBLE` por historia insuficiente. Diagnóstico, no
 regla: no autoriza invertir el patrón ni abrir otra captura. Evidencia:
 `docs/evidence/diagnostico-cuatro-casos-ventana4-20261118/`.
+
+## 13. Diagnóstico de factores de los cuatro casos (2026-11-18)
+
+Bloque posterior, sin mercado y con reglas fijadas antes de calcular. En el
+corte, los cuatro casos comparten la firma: el importe agresor explica
+93.74–99.35 % del crecimiento logarítmico de Q y la profundidad contraria cae
+solo 0.99–16.81 %; el ganador (STRKUSDT, 20.62 bps) es el de menor caída de
+profundidad y mayor peso del importe, y frena su impacto (8.64 → 7.60 bps por
+1 000), igual que BLESSUSDT 19:30 (2.56 → 1.46) y ARIAUSDT (9.93 → 2.72);
+BLESSUSDT 20:06 acelera (0.39 → 2.05) y pierde. En los últimos 30 s solo
+BLESSUSDT 20:06 muestra compra neta con precio en contra. La extensión
+normalizada contra la historia propia solo es contrastable en STRKUSDT (3.51×,
+7 bloques, referencia 5.87 bps) y BLESSUSDT 20:06 (6.73× y 5.35× por ternas);
+los otros dos quedan `UNKNOWN` por falta de bloques contiguos. El primer cambio
+posterior al aviso (131/143 anclas, disponibilidad mediana 60 059 ms) aparece a
+tiempo en los tres perdedores y no en el ganador, cuyos minutos 19:57–20:00 no
+tienen flujo: sirve para evitar pérdida, no para elegir ganador. La reversión
+por giro no se sostiene en 103 pares (media −2.29 bps, mediana −5.59; LONG
+−19.30/−12.71, SHORT +13.76/−4.95), aunque los cuatro casos la hagan atractiva.
+La mejora del primer cambio (+11.27/+4.42, n=109) reproduce la entrada tardía ya
+publicada. Ningún factor del corte separa al ganador con esta muestra; la única
+hipótesis nueva que merece prueba aparte es la extensión normalizada, débil e
+incompleta (2/4 casos y 87/143 anclas sin historia; 1.85 vs 1.57 con rangos
+solapados). No autoriza invertir el patrón, crear variante operativa ni abrir
+otra captura. Evidencia:
+`docs/evidence/diagnostico-factores-ventana4-20261118/`.

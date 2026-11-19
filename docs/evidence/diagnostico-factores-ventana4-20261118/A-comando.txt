@@ -1,0 +1,89 @@
+# A. Comando, ejecucion y determinismo
+
+Fecha: 2026-11-18. Rama: `research/universe-liquidez-v1`. HEAD al ejecutar:
+`d71543c1589d1a6d67154544976e5a1fde05ea50`.
+Python 3.14.3; pytest 9.1.1.
+
+## Comando (ejecucion 1)
+
+```bat
+python scripts\diagnostico_factores_ventana4.py ^
+  --db "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db" ^
+  --cobertura "docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json" ^
+  --klines "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl" ^
+  --derivados-anclas "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1" ^
+  --salida "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1" ^
+  --resumen "docs\evidence\diagnostico-factores-ventana4-20261118\C-resumen.json" ^
+  --run-id exp-v2-ventana-4-20261116a
+```
+
+## Salida de la ejecucion 1
+
+```json
+{"estado": "ok", "casos": 4, "verificacion_casos": 4, "anclas": 143, "verificacion_anclas": 143, "avance_vs_3m_evaluables": 56, "primer_cambio_observado": 131, "primer_giro_observado": 123, "conclusion_giro": "el giro no muestra reversion en esta muestra", "conclusion_cambio": "el primer cambio muestra mejora en esta muestra", "resumen": "docs\\evidence\\diagnostico-factores-ventana4-20261118\\C-resumen.json"}
+```
+
+exit code = 0
+
+## Salida de la ejecucion 2 (directorio de salida temporal)
+
+```json
+{"estado": "ok", "casos": 4, "verificacion_casos": 4, "anclas": 143, "verificacion_anclas": 143, "avance_vs_3m_evaluables": 56, "primer_cambio_observado": 131, "primer_giro_observado": 123, "conclusion_giro": "el giro no muestra reversion en esta muestra", "conclusion_cambio": "el primer cambio muestra mejora en esta muestra", "resumen": "C:\\Users\\adonm\\AppData\\Local\\Temp\\opencode\\diag-v4\\run2-resumen.json"}
+```
+
+exit code = 0
+
+## Salida de la ejecucion 3 (mismos directorios que la 1)
+
+Identica a la ejecucion 1; exit code = 0.
+
+## Determinismo
+
+- Ejecucion 1 vs 2: los **7 derivados** son identicos byte a byte; el resumen difiere solo en
+  `derivados_fuera_de_git.directorio` (la ruta de salida registrada). Comprobado con una comparacion
+  recursiva del JSON: un unico valor distinto.
+- Ejecucion 1 vs 3 (mismos directorios): `C-resumen.json` identico byte a byte.
+  SHA256 = `d71bdf78387f7bab2b413bf10fb96e03f296c4eedfe397cf583295d176c184dd`.
+- Los 5 insumos conservan su SHA256 antes/despues (`origen.fuentes_intactas = true`).
+- Las 7 fuentes de codigo conservan su SHA256 antes/despues de la ejecucion 3.
+
+## SHA256 de los derivados (fuera de Git)
+
+Directorio: `C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1`
+
+```
+6ca94a9408edcdab8c6399582938e79232c8986e3f84a3ff8b1320e77e3db3ea  anclas_cambios.jsonl       1325444 bytes
+1e923a868c7ff42bda27ebc1dcc3284ecf18dcbd81045406640fbae4eac355eb  anclas_factores.jsonl      1959985 bytes
+fd4ae81e2458d6e9da7f2b060889ab2d1fb4b8c5420a52f2af5bf8a56b7557a0  anclas_no_resolubles.jsonl 1203167 bytes
+d62a05d8c470c92218d896c8f9c65c46f16ecbbda859f441071e63a861c3f972  casos_bloques.jsonl          16906 bytes
+1efc77baf12251846a4c347f6860bb9c81c4acd18e037d0326770a8983cdd22b  casos_detalle_10s.jsonl       9784 bytes
+9870748b015edcf661eb37f573071777289af8edd487ee7e5eccd00fa66a0675  casos_factores.jsonl         57134 bytes
+a4c8927aca9992d22fe6f6d37320119ad17872cc12866decb267cc543db3d430  casos_ventanas.jsonl         10616 bytes
+```
+
+## Fuentes de codigo (sin cambios antes/despues)
+
+```
+4e581d8626600194dedb60026f3a75cb83502cb478a340d523fe48953811d864  scripts\diagnostico_factores_ventana4.py
+145d37e74fbef0ac129677657cdefc46dc519a864b67eb1518a525e0eaee6764  scripts\verificar_factores_ventana4.py
+b95800390eb70f83f82efd2ee33327c6ea73e763582add40cb6afaea831e7e0c  tests\test_diagnostico_factores_ventana4.py
+e79675d2aa6aef95bc106247b7204b95129117e94db83510338bc8ab2878a2e3  scripts\diagnostico_cuatro_casos_ventana4.py
+e91550054d4c9b89af4350fd7a5d7cbe6ce55936c55ac9a584d3f7f80f225d5f  scripts\replay_patron_ventana4.py
+850a99f46dd60e9464d8929cb0fe47033acba3a331b908e3f43b0a0640a3a1c5  scripts\comparar_anclas_ventana4.py
+30997309d5bbde12b565174a443c5827ab6e283f8944ddc8b9c0d4c2d23791ad  scripts\secuencia_presion_v1.py
+```
+
+## Fuentes de datos (sin cambios antes/despues)
+
+```
+39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd  cobertura_json
+4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874  consultas_klines.jsonl
+19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f  episodios_patron_originales.jsonl
+dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7  episodios_referencia_universo_igual.jsonl
+6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1  research.db
+```
+
+## Verificacion independiente
+
+`python scripts\verificar_factores_ventana4.py ...` → `checks=737 fallos=0`, exit 0
+(detalle en `D-verificacion.txt`).

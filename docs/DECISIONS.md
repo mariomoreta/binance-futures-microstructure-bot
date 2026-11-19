@@ -6392,3 +6392,75 @@ derivados fuera de Git en
 Pruebas: 23 nuevas + 69 de regresion = 92 passed, exit 0.
 
 **Publicado.** Commit selectivo 549440e4ddba51045cab0bae28e5c138b0565de (script, pruebas y evidencia) y documentacion 422b1566787036aaa5e81961b2997eb372a0785c; push normal a origin/research/universe-liquidez-v1 con SHA remoto verificado.
+
+## 2026-11-18 — Diagnóstico de factores de los cuatro casos (ventana 4): sin edge demostrado
+
+**Contexto.** Autorización humana (2026-11-18) sobre la base publicada
+`d71543c1589d1a6d67154544976e5a1fde05ea50` para medir en los cuatro casos del
+patrón de la ventana 4 y en las 143 anclas comunes: extensión del precio contra
+la historia propia en el corte, composición del crecimiento de Q (importe
+agresor vs caída de profundidad contraria), impacto marginal por tramo, últimos
+30 s y primer cambio posterior al aviso. Solo lectura de la captura y de sus
+derivados publicados; sin Binance, capturas nuevas, órdenes, cambios de
+patrón/umbral/horizonte/agrupación, variante operativa ni inversión del patrón.
+
+**Reglas fijadas antes de calcular.** Bloques posteriores de 1 minuto alineados
+al reloj, `b_k = floor(corte/60 s)·60 s + k·60 s` (`k=0..5`), con `b_0` en el
+minuto que contiene el corte para conservar la unidad de 1 minuto de la señal.
+Bloque utilizable solo con `run_id` esperado, `data_quality = OK`,
+`as_of ≥ bucket_end` y límites coherentes; si no, `UNKNOWN` con motivo y se
+cuenta entre los no usables anteriores al cambio. Cambio por prioridad: `giro`
+(flujo alineado ≤ 0) > `debilitamiento` (0 < flujo < flujo de la 3.ª ventana) >
+`precio_sin_avance` (flujo > 0 y Δcierre ≤ 0) > `profundidad_deja_de_caer`
+(profundidad media contraria > la de la 3.ª ventana). Δcierre solo contra el
+bloque inmediatamente anterior (`b_0` contra el cierre de la 3.ª) y `UNKNOWN`
+tras un hueco, sin relleno. Corte del cambio =
+`max(bucket_end, as_of del flujo, as_of del libro usable)`; entrada = apertura
+del primer minuto estrictamente posterior; salida = +5 min. Reversión solo si el
+cambio es `giro`, con la misma entrada; el módulo aborta si la entrada del
+cambio iguala la original. Extensión de 3 min con bloques contiguos sin solape
+que terminan al inicio de la terna, mínimo 6 (cobertura, no umbral de señal), y
+la medida ya publicada por ternas previas. Descomposición
+`Δlog Q = Δlog|F| − Δlog D`; impacto por tramo en bps por 1 000 de flujo;
+últimos 30 s con los 3 buckets de 10 s finales; concentración
+`max|delta|/|suma delta|`. Conclusión formal solo con ≥30 pares y cuando media y
+mediana coinciden en signo.
+
+**Resultado.** 4/4 casos y 143/143 anclas verificados. En el corte los cuatro
+comparten la firma: el importe agresor explica 93.74–99.35 % del crecimiento
+logarítmico de Q y la profundidad contraria cae solo 0.99–16.81 %. El ganador
+(STRK, 20.62 bps) es el de menor caída de profundidad y mayor peso del importe,
+y frena su impacto (8.64 → 7.60 bps/1 000), igual que BLESS 19:30 (2.56 → 1.46)
+y ARIA (9.93 → 2.72); solo BLESS 20:06 acelera (0.39 → 2.05) y pierde. Últimos
+30 s: solo BLESS 20:06 con compra neta y precio en contra; STRK cierra con
++1 390 a favor. Extensión normalizada: STRK 3.51× (7 bloques, referencia 5.87
+bps), BLESS 20:06 6.73× (12 bloques) y 5.35× por ternas; BLESS 19:30 y ARIA
+`UNKNOWN` (0 bloques). Primer cambio posterior: 131/143 observado (9 bloques no
+usables, 3 sin cambio), disponibilidad mediana 60 059 ms, tipos giro 79,
+debilitamiento 27, precio sin avance 9, profundidad 16; a tiempo en los tres
+perdedores y no en el ganador (19:57–20:00 sin flujo; primer cambio 3 s después
+de la salida). Giro como reversión (103 pares): media −2.29 bps, mediana −5.59
+(43/103 positivas); LONG −19.30/−12.71 (n=50), SHORT +13.76/−4.95 (n=53): no
+muestra reversión. Primer cambio: +11.27/+4.42 bps (n=109), pero su entrada
+coincide exactamente con la entrada tardía ya publicada (−76.5208, −152.7897,
+−67.3192): reproduce el efecto de espera, no una señal nueva. Controles del
+corte sin separación: giro 30 s 18/18 vs 35/33; presión sin avance 7/5 vs 46/46;
+frenada 13/9 vs 18/22; extensión 1.85 vs 1.57 (n=27/27); concentración 0.99 vs
+0.90; aporte del importe 94.78 vs 100.15.
+
+**Decisión.** No se crea regla, filtro ni variante operativa; no se invierte el
+patrón, no se reajustan umbrales ni horizonte y no se abre otra captura. Ningún
+factor del corte separa al ganador con esta muestra. La única hipótesis nueva
+direccionalmente consistente —extensión normalizada contra la historia propia—
+es débil e incompleta (2/4 casos y 87/143 anclas sin historia; 1.85 vs 1.57 con
+rangos solapados) y solo merece una prueba aparte con `run_id` nuevo, historia
+previa completa por contrato, umbrales declarados antes de mirar y ≥30 pares por
+grupo. El primer cambio posterior sirve para evitar pérdida, no para elegir
+ganador. La reversión por giro se rechaza en esta captura (103 controles) aunque
+los cuatro casos la hagan atractiva: no se invierte.
+
+**Evidencia.** `docs/evidence/diagnostico-factores-ventana4-20261118/`; derivados
+fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1\`.
+Verificación independiente 737/737. Pruebas: 39 nuevas + 78 de regresión
+focalizada = 117 passed, exit 0.

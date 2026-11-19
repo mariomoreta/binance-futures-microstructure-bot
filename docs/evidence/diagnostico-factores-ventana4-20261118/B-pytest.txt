@@ -1,0 +1,83 @@
+﻿# B. Pruebas
+
+Fecha: 2026-11-18. Python 3.14.3; pytest 9.1.1.
+
+## Enfocadas: tests/test_diagnostico_factores_ventana4.py
+
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.1.1, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\proyectos\binance-futures-microstructure-bot
+configfile: pyproject.toml
+plugins: anyio-4.14.1, langsmith-0.10.2
+collecting ... collected 39 items
+
+tests/test_diagnostico_factores_ventana4.py::test_bloques_3m_no_se_solapan_y_terminan_en_t0 PASSED [  2%]
+tests/test_diagnostico_factores_ventana4.py::test_avance_vs_3m_insuficiente PASSED [  5%]
+tests/test_diagnostico_factores_ventana4.py::test_avance_vs_3m_hueco_no_se_rellena PASSED [  7%]
+tests/test_diagnostico_factores_ventana4.py::test_avance_vs_3m_ratio PASSED [ 10%]
+tests/test_diagnostico_factores_ventana4.py::test_avance_vs_3m_referencia_cero PASSED [ 12%]
+tests/test_diagnostico_factores_ventana4.py::test_descomposicion_q_importe_domina PASSED [ 15%]
+tests/test_diagnostico_factores_ventana4.py::test_descomposicion_q_profundidad_domina PASSED [ 17%]
+tests/test_diagnostico_factores_ventana4.py::test_descomposicion_q_suma_100 PASSED [ 20%]
+tests/test_diagnostico_factores_ventana4.py::test_descomposicion_q_presion_no_positiva PASSED [ 23%]
+tests/test_diagnostico_factores_ventana4.py::test_impacto_frenada PASSED [ 25%]
+tests/test_diagnostico_factores_ventana4.py::test_impacto_aceleracion PASSED [ 28%]
+tests/test_diagnostico_factores_ventana4.py::test_impacto_2_no_positivo PASSED [ 30%]
+tests/test_diagnostico_factores_ventana4.py::test_ultimos_30s_completo_y_giro PASSED [ 33%]
+tests/test_diagnostico_factores_ventana4.py::test_ultimos_30s_faltante_es_unknown PASSED [ 35%]
+tests/test_diagnostico_factores_ventana4.py::test_ultimos_30s_as_of_antes_del_cierre_no_sirve PASSED [ 38%]
+tests/test_diagnostico_factores_ventana4.py::test_concentracion_10s PASSED [ 41%]
+tests/test_diagnostico_factores_ventana4.py::test_concentracion_10s_faltante PASSED [ 43%]
+tests/test_diagnostico_factores_ventana4.py::test_bloque_b0_es_el_minuto_del_corte PASSED [ 46%]
+tests/test_diagnostico_factores_ventana4.py::test_bloque_incompleto_se_salta_con_motivo PASSED [ 48%]
+tests/test_diagnostico_factores_ventana4.py::test_bloque_debilitamiento PASSED [ 51%]
+tests/test_diagnostico_factores_ventana4.py::test_bloque_precio_sin_avance PASSED [ 53%]
+tests/test_diagnostico_factores_ventana4.py::test_bloque_profundidad_deja_de_caer PASSED [ 56%]
+tests/test_diagnostico_factores_ventana4.py::test_sin_cambio_en_horizonte PASSED [ 58%]
+tests/test_diagnostico_factores_ventana4.py::test_sin_bloques_utiles_es_unknown PASSED [ 61%]
+tests/test_diagnostico_factores_ventana4.py::test_detalle_10s_marca_buckets_faltantes PASSED [ 64%]
+tests/test_diagnostico_factores_ventana4.py::test_cambio_desplaza_entrada_un_minuto PASSED [ 66%]
+tests/test_diagnostico_factores_ventana4.py::test_cambio_con_disponibilidad_muy_tardia_desplaza_dos_minutos PASSED [ 69%]
+tests/test_diagnostico_factores_ventana4.py::test_cambio_reutilizando_entrada_original_aborta PASSED [ 71%]
+tests/test_diagnostico_factores_ventana4.py::test_cambio_sin_velas_no_resoluble_pero_con_entrada PASSED [ 74%]
+tests/test_diagnostico_factores_ventana4.py::test_reversion_solo_si_es_giro PASSED [ 76%]
+tests/test_diagnostico_factores_ventana4.py::test_cambio_sin_evento_es_unknown PASSED [ 79%]
+tests/test_diagnostico_factores_ventana4.py::test_conclusion_giro_datos_insuficientes PASSED [ 82%]
+tests/test_diagnostico_factores_ventana4.py::test_conclusion_giro_positiva PASSED [ 84%]
+tests/test_diagnostico_factores_ventana4.py::test_conclusion_giro_negativa PASSED [ 87%]
+tests/test_diagnostico_factores_ventana4.py::test_conclusion_cambio_mejora PASSED [ 89%]
+tests/test_diagnostico_factores_ventana4.py::test_conclusion_cambio_no_mejora PASSED [ 92%]
+tests/test_diagnostico_factores_ventana4.py::test_fila_flujo_disponibilidad PASSED [ 94%]
+tests/test_diagnostico_factores_ventana4.py::test_fila_libro_degradada_no_sirve PASSED [ 97%]
+tests/test_diagnostico_factores_ventana4.py::test_bucket_10s_disponibilidad PASSED [100%]
+
+============================= 39 passed in 0.16s ==============================
+EXIT_FOCO=0
+
+## Regresion focalizada (ventana 4 y patron)
+
+........................................................................ [ 92%]
+......                                                                   [100%]
+78 passed in 14.69s
+EXIT_REGRESION=0
+
+## Suite completa (excluye tests/test_engineering_clock_budget.py: archivo modificado localmente, no por este bloque, con SyntaxError preexistente)
+
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_engineering_live_window_local.py::test_contexto_ok_ambos_simbolos_precios_distintos
+FAILED tests/test_engineering_live_window_local.py::test_contexto_json_error_no_falla_catastroficamente
+FAILED tests/test_engineering_live_window_local.py::test_contexto_cuerpo_no_json_registra_excepcion
+FAILED tests/test_engineering_live_window_local.py::test_contexto_lista_vacia
+FAILED tests/test_engineering_live_window_local.py::test_presupuesto_preenvio_reserva_antes_del_envio
+FAILED tests/test_engineering_live_window_local.py::test_vencimiento_durante_preparacion
+FAILED tests/test_engineering_live_window_local.py::test_identidades_no_se_deduplican_por_timestamp
+FAILED tests/test_market_stream_window.py::AcceptanceTests::test_plan_counts_browser_inside_consumer_budget
+FAILED tests/test_market_stream_window.py::AcceptanceTests::test_plan_declares_chain_budget_and_stop_rules
+FAILED tests/test_market_stream_window.py::OrchestrationTests::test_window_orchestrates_service_and_detects_close_without_bff
+FAILED tests/test_session_new_public_market.py::test_session_new_public_market_prepares_without_backfill
+11 failed, 2049 passed, 2 skipped, 10 warnings, 43 subtests passed in 845.31s (0:14:05)
+EXIT_SUITE=1

@@ -1,5 +1,86 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-18 — diagnostico de factores de los cuatro casos (sin mercado)
+
+**Autorizacion humana (2026-11-18, continuacion):** sobre la base publicada
+`d71543c1589d1a6d67154544976e5a1fde05ea50`, medir en los cuatro casos del
+patron de la ventana 4 y en las 143 anclas comunes: (1) en el corte, cuanto
+habia avanzado el precio frente a la conducta reciente del mismo contrato, si la
+presion neta crecio en importe o el ratio subio porque cayo la profundidad
+opuesta, y si cada tramo seguia desplazando el precio; (2) tras el aviso, el
+primer cambio sostenido por datos (giro, debilitamiento, precio sin avance o
+profundidad que deja de caer), cuando ocurrio y cuando estuvo disponible; (3)
+las mismas medidas en las 143 anclas, separando LONG y SHORT y mostrando datos
+faltantes. Solo lectura de `exp-v2-ventana-4-20261116a` y de los derivados
+publicados; sin Binance, consultas publicas, capturas nuevas, ordenes, cambios
+de patron/umbral/horizonte/agrupacion, variante operativa ni inversion del
+patron. `opencode.json` y archivos ajenos no se tocan.
+
+**Hecho:** `scripts/diagnostico_factores_ventana4.py` (version
+`diagnostico-factores-v1`) reutiliza los helpers publicados
+(`replay_patron_ventana4`, `comparar_anclas_ventana4`,
+`diagnostico_cuatro_casos_ventana4`, `secuencia_presion_v1`) y verifica los 4
+casos y las 143 anclas contra lo publicado (4/4 y 143/143). Reglas fijadas antes
+de calcular: bloques posteriores de 1 minuto alineados al reloj
+(`b_k = floor(corte/60 s)·60 s + k·60 s`, `k=0..5`, `b_0` contiene el corte);
+bloque usable solo con `run_id` esperado, `data_quality = OK`, `as_of ≥
+bucket_end` y limites coherentes; cambio = `giro` (flujo alineado ≤ 0) >
+`debilitamiento` (0 < flujo < flujo de la 3.a ventana) > `precio_sin_avance`
+(flujo > 0 y Δcierre ≤ 0) > `profundidad_deja_de_caer` (profundidad media
+contraria > la de la 3.a ventana); Δcierre solo contra el bloque inmediatamente
+anterior (`b_0` contra el cierre de la 3.a) y `UNKNOWN` tras un hueco; corte del
+cambio = `max(bucket_end, as_of flujo, as_of libro usable)` y entrada en la
+apertura del primer minuto estrictamente posterior; reversion solo si el cambio
+es giro; extension de 3 min con bloques contiguos sin solape y minimo 6;
+descomposicion `Δlog Q = Δlog|F| − Δlog D`; impacto marginal por tramo;
+ultimos 30 s con 3 buckets de 10 s y concentracion `max|delta|/|suma|`.
+
+**Resultado verificable:** 4/4 casos y 143/143 anclas. En el corte, los cuatro
+comparten la firma: el ratio Q sube sobre todo por importe agresor (93.7-99.3 %
+del crecimiento logaritmico) y la profundidad contraria cae solo 0.99-16.81 %;
+el ganador (STRK, 20.62 bps) es el de menor caida de profundidad y mayor peso
+del importe, y frena su impacto (8.64 -> 7.60 bps/1 000), igual que BLESS 19:30
+y ARIA; solo BLESS 20:06 acelera (0.39 -> 2.05) y pierde. Ultimos 30 s: solo
+BLESS 20:06 muestra compra neta y precio en contra; STRK cierra con +1 390 de
+flujo a favor. Extension normalizada: STRK 3.51x (7 bloques, referencia 5.87
+bps), BLESS 20:06 6.73x (12 bloques) y 5.35x sus ternas; BLESS 19:30 y ARIA
+`UNKNOWN` (0 bloques). Primer cambio posterior: 131/143 con cambio observado (9
+bloques no usables, 3 sin cambio); mediana de disponibilidad 60 059 ms; tipos
+giro 79, debilitamiento 27, precio sin avance 9, profundidad 16. En los tres
+perdedores el cambio se conoce ~1 minuto tras el aviso y antes de la salida de 5
+minutos; en STRK los minutos 19:57-20:00 no tienen flujo y el primer cambio
+llega 3 s despues de la salida. Giro como reversion (103 pares): media -2.29 bps
+y mediana -5.59 (43/103 positivas); LONG -19.30/-12.71 (n=50), SHORT +13.76/-4.95
+(n=53): **no muestra reversion**. Primer cambio: +11.27/+4.42 bps (n=109), pero
+su entrada coincide exactamente con la entrada tardia ya publicada (-76.5208,
+-152.7897, -67.3192) y reproduce el efecto de espera, no una senal nueva.
+
+**Conclusion:** el factor que el bot no evaluaba y que apunta en la direccion
+del ganador es la extension normalizada contra la historia propia en el corte,
+pero es una hipotesis: 2 de 4 casos y 87 de 143 anclas quedan sin historia
+contigua y la diferencia en los controles es 1.85 vs 1.57 con rangos solapados.
+La evidencia posterior existio a tiempo en los tres perdedores y no en el
+ganador: sirve para evitar perdida, no para elegir ganador. No se invierte el
+patron, no se crea variante operativa ni se abre otra captura.
+
+**Pruebas:** `tests/test_diagnostico_factores_ventana4.py` 39 passed; regresion
+focalizada 78 passed; conjunto 117 passed, exit 0. La suite completa conserva 11
+fallos preexistentes en modulos ajenos (`test_engineering_live_window_local`,
+`test_market_stream_window`, `test_session_new_public_market`) y 1 error de
+coleccion en `tests/test_engineering_clock_budget.py`, archivo modificado
+localmente por el usuario y no por este bloque.
+
+**Evidencias:** `docs/evidence/diagnostico-factores-ventana4-20261118/` (README,
+A comando/exit 0/determinismo/hashes, B pytest, C resumen JSON, D verificacion
+independiente 737/737); derivados fuera de Git en
+`C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1\`.
+Fuentes intactas: `research.db` `6ad6f716...a7f1`, `consultas_klines.jsonl`
+`4ee61463...a61874`, `C-cobertura-real.json` `39652bf0...f4bd`.
+
+**Siguiente:** ninguna prueba automatica. La hipotesis de extension normalizada
+exige autorizacion humana explicita con `run_id` nuevo, historia previa completa
+por contrato y criterio de potencia fijado antes de mirar resultados.
+
 ## Bloque 2026-11-18 — diagnostico de los cuatro casos del patron (sin mercado)
 
 **Autorizacion humana (2026-11-18, continuacion):** sobre la base publicada

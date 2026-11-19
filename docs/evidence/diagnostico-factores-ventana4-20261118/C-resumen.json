@@ -1,0 +1,3603 @@
+{
+ "casos": {
+  "detalle": [
+   {
+    "avance_bps": 115.7521,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 115.7521,
+     "bloques_disponibles": 0,
+     "estado": "UNKNOWN",
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 1,
+     "motivo": "historia_insuficiente",
+     "rango_previo_ms": [
+      1794857160000,
+      1794857220000
+     ],
+     "referencia_bps": null
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 115.7521,
+     "estado": "UNKNOWN",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": null,
+     "ternas_previas_no_solapadas": 0
+    },
+    "concentracion_10s": {
+     "bucket_dominante_iso": "2026-11-16T19:29:40+00:00",
+     "bucket_dominante_ms": 1794857380000,
+     "buckets": [
+      -3242.7969,
+      128.7127,
+      1479.5968,
+      -23698.6947,
+      -30182.7653,
+      7442.7445
+     ],
+     "concentracion": 0.6279,
+     "estado": "resoluble",
+     "motivo": null
+    },
+    "cut_iso": "2026-11-16T19:30:01.355000+00:00",
+    "cut_ms": 1794857401355,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": "2026-11-16T19:30:11.211000+00:00",
+      "as_of_ms": 1794857411211,
+      "buy_notional": 36445.1312,
+      "delta": -22128.5576,
+      "estado": "resoluble",
+      "fin_ms": 1794857410000,
+      "inicio_iso": "2026-11-16T19:30:00+00:00",
+      "inicio_ms": 1794857400000,
+      "motivo": null,
+      "precio_close": 0.018031,
+      "precio_open": 0.018101,
+      "sell_notional": 58573.6888
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:21.153000+00:00",
+      "as_of_ms": 1794857421153,
+      "buy_notional": 35540.8559,
+      "delta": -1724.9843,
+      "estado": "resoluble",
+      "fin_ms": 1794857420000,
+      "inicio_iso": "2026-11-16T19:30:10+00:00",
+      "inicio_ms": 1794857410000,
+      "motivo": null,
+      "precio_close": 0.018025,
+      "precio_open": 0.01803,
+      "sell_notional": 37265.8402
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:31.196000+00:00",
+      "as_of_ms": 1794857431196,
+      "buy_notional": 36725.3271,
+      "delta": 3169.9106,
+      "estado": "resoluble",
+      "fin_ms": 1794857430000,
+      "inicio_iso": "2026-11-16T19:30:20+00:00",
+      "inicio_ms": 1794857420000,
+      "motivo": null,
+      "precio_close": 0.018037,
+      "precio_open": 0.018024,
+      "sell_notional": 33555.4165
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:41.147000+00:00",
+      "as_of_ms": 1794857441147,
+      "buy_notional": 20669.6498,
+      "delta": -14000.9382,
+      "estado": "resoluble",
+      "fin_ms": 1794857440000,
+      "inicio_iso": "2026-11-16T19:30:30+00:00",
+      "inicio_ms": 1794857430000,
+      "motivo": null,
+      "precio_close": 0.018021,
+      "precio_open": 0.018036,
+      "sell_notional": 34670.588
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:50.119000+00:00",
+      "as_of_ms": 1794857450119,
+      "buy_notional": 23109.8845,
+      "delta": -1993.0053,
+      "estado": "resoluble",
+      "fin_ms": 1794857450000,
+      "inicio_iso": "2026-11-16T19:30:40+00:00",
+      "inicio_ms": 1794857440000,
+      "motivo": null,
+      "precio_close": 0.018015,
+      "precio_open": 0.01802,
+      "sell_notional": 25102.8898
+     },
+     {
+      "as_of_iso": "2026-11-16T19:31:00.138000+00:00",
+      "as_of_ms": 1794857460138,
+      "buy_notional": 46618.3775,
+      "delta": 30379.2361,
+      "estado": "resoluble",
+      "fin_ms": 1794857460000,
+      "inicio_iso": "2026-11-16T19:30:50+00:00",
+      "inicio_ms": 1794857450000,
+      "motivo": null,
+      "precio_close": 0.018169,
+      "precio_open": 0.018023,
+      "sell_notional": 16239.1414
+     }
+    ],
+    "direccion": "SHORT",
+    "entrada_original_ms": 1794857460000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": true
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 60.4873,
+     "delta_2_bps": 45.864,
+     "delta_3_bps": 70.2101,
+     "estado": "resoluble",
+     "flujo_alineado_2": 17925.5767,
+     "flujo_alineado_3": 48073.2029,
+     "frenada_avance": false,
+     "frenada_impacto": true,
+     "impacto_2_bps_por_1k": 2.5586,
+     "impacto_3_bps_por_1k": 1.4605,
+     "impacto_relativo": 0.5708,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -36.458,
+     "disponibilidad_iso": "2026-11-16T19:31:00.252000+00:00",
+     "disponibilidad_ms": 1794857460252,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T19:31:00+00:00",
+     "fin_ms": 1794857460000,
+     "flujo_alineado": 6298.3386,
+     "inicio_iso": "2026-11-16T19:30:00+00:00",
+     "inicio_ms": 1794857400000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.018169,
+     "profundidad_contraria": 7666.1828,
+     "tipo": "debilitamiento",
+     "tipos": [
+      "debilitamiento",
+      "precio_sin_avance"
+     ]
+    },
+    "primer_giro": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": 0.5504,
+     "disponibilidad_iso": "2026-11-16T19:32:00.156000+00:00",
+     "disponibilidad_ms": 1794857520156,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T19:32:00+00:00",
+     "fin_ms": 1794857520000,
+     "flujo_alineado": -26049.4155,
+     "inicio_iso": "2026-11-16T19:31:00+00:00",
+     "inicio_ms": 1794857460000,
+     "k": 1,
+     "motivo": null,
+     "precio_cierre": 0.018168,
+     "profundidad_contraria": null,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_precio_sin_avance": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -36.458,
+     "disponibilidad_iso": "2026-11-16T19:31:00.252000+00:00",
+     "disponibilidad_ms": 1794857460252,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T19:31:00+00:00",
+     "fin_ms": 1794857460000,
+     "flujo_alineado": 6298.3386,
+     "inicio_iso": "2026-11-16T19:30:00+00:00",
+     "inicio_ms": 1794857400000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.018169,
+     "profundidad_contraria": 7666.1828,
+     "tipo": "precio_sin_avance",
+     "tipos": [
+      "debilitamiento",
+      "precio_sin_avance"
+     ]
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 96.2152,
+     "aporte_profundidad_pct": 3.7848,
+     "estado": "resoluble",
+     "flujo_alineado_1": 2289.7513,
+     "flujo_alineado_3": 48073.2029,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 8672.5498,
+     "profundidad_3": 7693.7785,
+     "profundidad_cae_pct": -11.2859,
+     "q_1": 0.264,
+     "q_3": 6.2483,
+     "q_crecimiento": 23.6658
+    },
+    "resultado_cambio": {
+     "adverso_bps": -234.51692815854574,
+     "continuacion_bps": -76.5208,
+     "cut_cambio_iso": "2026-11-16T19:31:00.252000+00:00",
+     "cut_cambio_ms": 1794857460252,
+     "demora_entrada_ms": 59748,
+     "entrada_ms": 1794857520000,
+     "estado": "resoluble",
+     "favorable_bps": 63.85906963941701,
+     "motivo": null,
+     "precio_entrada": 0.018165,
+     "precio_salida": 0.018304,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": null,
+     "reversion_motivo": "no_aplica",
+     "salida_ms": 1794857820000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "adverso_bps": -239.0262708597235,
+     "continuacion_bps": -66.0902,
+     "cut_cambio_iso": "2026-11-16T19:32:00.156000+00:00",
+     "cut_cambio_ms": 1794857520156,
+     "demora_entrada_ms": 59844,
+     "entrada_ms": 1794857580000,
+     "estado": "resoluble",
+     "favorable_bps": -0.0,
+     "motivo": null,
+     "precio_entrada": 0.018157,
+     "precio_salida": 0.018277,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 66.0902,
+     "reversion_motivo": null,
+     "salida_ms": 1794857880000,
+     "trayectoria_completa": true
+    },
+    "retorno_original_bps": -99.0371,
+    "salida_original_ms": 1794857760000,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794857340000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794857401211,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": 52.2035,
+     "estado": "resoluble",
+     "flujo_alineado_30s": 46438.7155,
+     "giro_30s": false,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794857370000,
+      1794857400000
+     ]
+    }
+   },
+   {
+    "avance_bps": 20.6186,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 20.6186,
+     "bloques_disponibles": 7,
+     "estado": "resoluble",
+     "extension_normalizada": 3.5103,
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 22,
+     "motivo": null,
+     "movimientos_bps": [
+      5.8737,
+      5.8685,
+      8.8028,
+      2.9386,
+      14.7016,
+      2.9464,
+      20.6307
+     ],
+     "rango_previo_ms": [
+      1794857460000,
+      1794858780000
+     ],
+     "referencia_bps": 5.8737
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 20.6186,
+     "estado": "UNKNOWN",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": 13.1991,
+     "ternas_previas_no_solapadas": 4
+    },
+    "concentracion_10s": {
+     "bucket_faltante_ms": 1794858900000,
+     "detalle": "bucket_10s_ausente",
+     "estado": "UNKNOWN",
+     "motivo": "buckets_10s_incompletos"
+    },
+    "cut_iso": "2026-11-16T19:56:04.530000+00:00",
+    "cut_ms": 1794858964530,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859270000,
+      "inicio_iso": "2026-11-16T20:01:00+00:00",
+      "inicio_ms": 1794859260000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859280000,
+      "inicio_iso": "2026-11-16T20:01:10+00:00",
+      "inicio_ms": 1794859270000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859290000,
+      "inicio_iso": "2026-11-16T20:01:20+00:00",
+      "inicio_ms": 1794859280000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859300000,
+      "inicio_iso": "2026-11-16T20:01:30+00:00",
+      "inicio_ms": 1794859290000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859310000,
+      "inicio_iso": "2026-11-16T20:01:40+00:00",
+      "inicio_ms": 1794859300000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": "2026-11-16T20:02:03.011000+00:00",
+      "as_of_ms": 1794859323011,
+      "buy_notional": 1342.8527,
+      "delta": 1342.8527,
+      "estado": "resoluble",
+      "fin_ms": 1794859320000,
+      "inicio_iso": "2026-11-16T20:01:50+00:00",
+      "inicio_ms": 1794859310000,
+      "motivo": null,
+      "precio_close": 0.03415,
+      "precio_open": 0.03414,
+      "sell_notional": 0.0
+     }
+    ],
+    "direccion": "LONG",
+    "entrada_original_ms": 1794859020000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 1,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": false
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 71.4166,
+     "delta_2_bps": 5.891,
+     "delta_3_bps": 14.7189,
+     "estado": "resoluble",
+     "flujo_alineado_2": 681.8104,
+     "flujo_alineado_3": 1937.2903,
+     "frenada_avance": false,
+     "frenada_impacto": true,
+     "impacto_2_bps_por_1k": 8.6403,
+     "impacto_3_bps_por_1k": 7.5977,
+     "impacto_relativo": 0.8793,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [
+      {
+       "inicio_ms": 1794858960000,
+       "k": 0,
+       "motivo": "flujo_incompleto"
+      },
+      {
+       "inicio_ms": 1794859020000,
+       "k": 1,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859080000,
+       "k": 2,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859140000,
+       "k": 3,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859200000,
+       "k": 4,
+       "motivo": "flujo_ausente"
+      }
+     ],
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": "2026-11-16T20:02:03.027000+00:00",
+     "disponibilidad_ms": 1794859323027,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:02:00+00:00",
+     "fin_ms": 1794859320000,
+     "flujo_alineado": 1342.8527,
+     "inicio_iso": "2026-11-16T20:01:00+00:00",
+     "inicio_ms": 1794859260000,
+     "k": 5,
+     "motivo": null,
+     "precio_cierre": 0.03415,
+     "profundidad_contraria": 310092.246,
+     "tipo": "debilitamiento",
+     "tipos": [
+      "debilitamiento",
+      "profundidad_deja_de_caer"
+     ]
+    },
+    "primer_giro": {
+     "bloques_totales": 6,
+     "bloques_utiles": 1,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "primer_precio_sin_avance": {
+     "bloques_totales": 6,
+     "bloques_utiles": 1,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_no_usables_antes": [
+      {
+       "inicio_ms": 1794858960000,
+       "k": 0,
+       "motivo": "flujo_incompleto"
+      },
+      {
+       "inicio_ms": 1794859020000,
+       "k": 1,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859080000,
+       "k": 2,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859140000,
+       "k": 3,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859200000,
+       "k": 4,
+       "motivo": "flujo_ausente"
+      }
+     ],
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": "2026-11-16T20:02:03.027000+00:00",
+     "disponibilidad_ms": 1794859323027,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:02:00+00:00",
+     "fin_ms": 1794859320000,
+     "flujo_alineado": 1342.8527,
+     "inicio_iso": "2026-11-16T20:01:00+00:00",
+     "inicio_ms": 1794859260000,
+     "k": 5,
+     "motivo": null,
+     "precio_cierre": 0.03415,
+     "profundidad_contraria": 310092.246,
+     "tipo": "profundidad_deja_de_caer",
+     "tipos": [
+      "debilitamiento",
+      "profundidad_deja_de_caer"
+     ]
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 99.3482,
+     "aporte_profundidad_pct": 0.6518,
+     "estado": "resoluble",
+     "flujo_alineado_1": 423.1172,
+     "flujo_alineado_3": 1937.2903,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 298762.2216,
+     "profundidad_3": 295794.8387,
+     "profundidad_cae_pct": -0.9932,
+     "q_1": 0.0014,
+     "q_3": 0.0065,
+     "q_crecimiento": 4.6245
+    },
+    "resultado_cambio": {
+     "adverso_bps": -8.792497069166627,
+     "continuacion_bps": 20.5158,
+     "cut_cambio_iso": "2026-11-16T20:02:03.027000+00:00",
+     "cut_cambio_ms": 1794859323027,
+     "demora_entrada_ms": 56973,
+     "entrada_ms": 1794859380000,
+     "estado": "resoluble",
+     "favorable_bps": 26.377491207503212,
+     "motivo": null,
+     "precio_entrada": 0.03412,
+     "precio_salida": 0.03419,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": null,
+     "reversion_motivo": "no_aplica",
+     "salida_ms": 1794859680000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "continuacion_bps": null,
+     "cut_cambio_ms": null,
+     "entrada_ms": null,
+     "estado": "UNKNOWN",
+     "motivo": "sin_cambio_en_horizonte",
+     "reutiliza_entrada_original": null,
+     "reversion_bps": null,
+     "salida_ms": null
+    },
+    "retorno_original_bps": 44.1176,
+    "salida_original_ms": 1794859320000,
+    "symbol": "STRKUSDT",
+    "terna": "STRKUSDT|1794858900000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794858964513,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": 11.7716,
+     "estado": "resoluble",
+     "flujo_alineado_30s": 1390.0903,
+     "giro_30s": false,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794858930000,
+      1794858960000
+     ]
+    }
+   },
+   {
+    "avance_bps": 326.2365,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 326.2365,
+     "bloques_disponibles": 12,
+     "estado": "resoluble",
+     "extension_normalizada": 6.7281,
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 37,
+     "motivo": null,
+     "movimientos_bps": [
+      115.7521,
+      7.155,
+      54.6922,
+      42.0673,
+      35.2501,
+      11.0571,
+      42.2845,
+      301.281,
+      102.5786,
+      117.0255,
+      33.4183,
+      198.9323
+     ],
+     "rango_previo_ms": [
+      1794857160000,
+      1794859380000
+     ],
+     "referencia_bps": 48.4883
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 326.2365,
+     "estado": "resoluble",
+     "extension_normalizada": 5.3458,
+     "minimo_ternas_previas": 6,
+     "motivo": null,
+     "referencia_bps": 61.0272,
+     "ternas_previas_no_solapadas": 6
+    },
+    "concentracion_10s": {
+     "bucket_dominante_iso": "2026-11-16T20:05:20+00:00",
+     "bucket_dominante_ms": 1794859520000,
+     "buckets": [
+      -24132.4472,
+      -41978.3848,
+      -135901.671,
+      19618.8238,
+      9217.5955,
+      16294.2824
+     ],
+     "concentracion": 0.8663,
+     "estado": "resoluble",
+     "motivo": null
+    },
+    "cut_iso": "2026-11-16T20:06:00.464000+00:00",
+    "cut_ms": 1794859560464,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": "2026-11-16T20:06:10.213000+00:00",
+      "as_of_ms": 1794859570213,
+      "buy_notional": 46812.2767,
+      "delta": -42285.067,
+      "estado": "resoluble",
+      "fin_ms": 1794859570000,
+      "inicio_iso": "2026-11-16T20:06:00+00:00",
+      "inicio_ms": 1794859560000,
+      "motivo": null,
+      "precio_close": 0.017457,
+      "precio_open": 0.017579,
+      "sell_notional": 89097.3437
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:20.265000+00:00",
+      "as_of_ms": 1794859580265,
+      "buy_notional": 55283.9078,
+      "delta": -11182.8194,
+      "estado": "resoluble",
+      "fin_ms": 1794859580000,
+      "inicio_iso": "2026-11-16T20:06:10+00:00",
+      "inicio_ms": 1794859570000,
+      "motivo": null,
+      "precio_close": 0.017458,
+      "precio_open": 0.017447,
+      "sell_notional": 66466.7272
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:30.229000+00:00",
+      "as_of_ms": 1794859590229,
+      "buy_notional": 64168.703,
+      "delta": 22114.1438,
+      "estado": "resoluble",
+      "fin_ms": 1794859590000,
+      "inicio_iso": "2026-11-16T20:06:20+00:00",
+      "inicio_ms": 1794859580000,
+      "motivo": null,
+      "precio_close": 0.017486,
+      "precio_open": 0.017462,
+      "sell_notional": 42054.5592
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:40.283000+00:00",
+      "as_of_ms": 1794859600283,
+      "buy_notional": 42009.014,
+      "delta": -55.046,
+      "estado": "resoluble",
+      "fin_ms": 1794859600000,
+      "inicio_iso": "2026-11-16T20:06:30+00:00",
+      "inicio_ms": 1794859590000,
+      "motivo": null,
+      "precio_close": 0.017534,
+      "precio_open": 0.017496,
+      "sell_notional": 42064.0599
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:50.204000+00:00",
+      "as_of_ms": 1794859610204,
+      "buy_notional": 40394.9149,
+      "delta": 17169.4969,
+      "estado": "resoluble",
+      "fin_ms": 1794859610000,
+      "inicio_iso": "2026-11-16T20:06:40+00:00",
+      "inicio_ms": 1794859600000,
+      "motivo": null,
+      "precio_close": 0.017527,
+      "precio_open": 0.017533,
+      "sell_notional": 23225.4181
+     },
+     {
+      "as_of_iso": "2026-11-16T20:07:04.986000+00:00",
+      "as_of_ms": 1794859624986,
+      "buy_notional": 24077.3209,
+      "delta": 3237.7166,
+      "estado": "resoluble",
+      "fin_ms": 1794859620000,
+      "inicio_iso": "2026-11-16T20:06:50+00:00",
+      "inicio_ms": 1794859610000,
+      "motivo": null,
+      "precio_close": 0.017536,
+      "precio_open": 0.017526,
+      "sell_notional": 20839.6043
+     }
+    ],
+    "direccion": "SHORT",
+    "entrada_original_ms": 1794859620000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": true
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 98.6515,
+     "delta_2_bps": 4.4012,
+     "delta_3_bps": 321.977,
+     "estado": "resoluble",
+     "flujo_alineado_2": 11226.9833,
+     "flujo_alineado_3": 156881.8014,
+     "frenada_avance": false,
+     "frenada_impacto": false,
+     "impacto_2_bps_por_1k": 0.392,
+     "impacto_3_bps_por_1k": 2.0524,
+     "impacto_relativo": 5.2354,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": 27.2975,
+     "disponibilidad_iso": "2026-11-16T20:07:04.997000+00:00",
+     "disponibilidad_ms": 1794859624997,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:07:00+00:00",
+     "fin_ms": 1794859620000,
+     "flujo_alineado": 11001.575,
+     "inicio_iso": "2026-11-16T20:06:00+00:00",
+     "inicio_ms": 1794859560000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.017536,
+     "profundidad_contraria": 6928.2068,
+     "tipo": "debilitamiento",
+     "tipos": [
+      "debilitamiento"
+     ]
+    },
+    "primer_giro": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -53.2037,
+     "disponibilidad_iso": "2026-11-16T20:09:00.451000+00:00",
+     "disponibilidad_ms": 1794859740451,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:09:00+00:00",
+     "fin_ms": 1794859740000,
+     "flujo_alineado": -88844.7283,
+     "inicio_iso": "2026-11-16T20:08:00+00:00",
+     "inicio_ms": 1794859680000,
+     "k": 2,
+     "motivo": null,
+     "precio_cierre": 0.017573,
+     "profundidad_contraria": 6888.4514,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_precio_sin_avance": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -80.2367,
+     "disponibilidad_iso": "2026-11-16T20:10:00.436000+00:00",
+     "disponibilidad_ms": 1794859800436,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:10:00+00:00",
+     "fin_ms": 1794859800000,
+     "flujo_alineado": -47158.5636,
+     "inicio_iso": "2026-11-16T20:09:00+00:00",
+     "inicio_ms": 1794859740000,
+     "k": 3,
+     "motivo": null,
+     "precio_cierre": 0.017714,
+     "profundidad_contraria": 7777.2196,
+     "tipo": "profundidad_deja_de_caer",
+     "tipos": [
+      "giro",
+      "profundidad_deja_de_caer"
+     ]
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 97.4168,
+     "aporte_profundidad_pct": 2.5832,
+     "estado": "resoluble",
+     "flujo_alineado_1": 949.9308,
+     "flujo_alineado_3": 156881.8014,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 8725.2337,
+     "profundidad_3": 7620.176,
+     "profundidad_cae_pct": -12.6651,
+     "q_1": 0.1089,
+     "q_3": 20.5877,
+     "q_crecimiento": 189.1005
+    },
+    "resultado_cambio": {
+     "adverso_bps": -357.6537911301858,
+     "continuacion_bps": -152.7897,
+     "cut_cambio_iso": "2026-11-16T20:07:04.997000+00:00",
+     "cut_cambio_ms": 1794859624997,
+     "demora_entrada_ms": 55003,
+     "entrada_ms": 1794859680000,
+     "estado": "resoluble",
+     "favorable_bps": 28.612303290416197,
+     "motivo": null,
+     "precio_entrada": 0.017475,
+     "precio_salida": 0.017742,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": null,
+     "reversion_motivo": "no_aplica",
+     "salida_ms": 1794859980000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "adverso_bps": -212.7179371438248,
+     "continuacion_bps": -14.6702,
+     "cut_cambio_iso": "2026-11-16T20:09:00.451000+00:00",
+     "cut_cambio_ms": 1794859740451,
+     "demora_entrada_ms": 59549,
+     "entrada_ms": 1794859800000,
+     "estado": "resoluble",
+     "favorable_bps": 33.290075043728166,
+     "motivo": null,
+     "precio_entrada": 0.017723,
+     "precio_salida": 0.017749,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 14.6702,
+     "reversion_motivo": null,
+     "salida_ms": 1794860100000,
+     "trayectoria_completa": true
+    },
+    "retorno_original_bps": -142.0179,
+    "salida_original_ms": 1794859920000,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794859500000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794859560450,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": -3.9825,
+     "estado": "resoluble",
+     "flujo_alineado_30s": -45130.7017,
+     "giro_30s": true,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794859530000,
+      1794859560000
+     ]
+    }
+   },
+   {
+    "avance_bps": 117.0264,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 117.0264,
+     "bloques_disponibles": 0,
+     "estado": "UNKNOWN",
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 0,
+     "motivo": "historia_insuficiente",
+     "rango_previo_ms": null,
+     "referencia_bps": null
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 117.0264,
+     "estado": "UNKNOWN",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": 166.8762,
+     "ternas_previas_no_solapadas": 4
+    },
+    "concentracion_10s": {
+     "bucket_dominante_iso": "2026-11-16T20:14:50+00:00",
+     "bucket_dominante_ms": 1794860090000,
+     "buckets": [
+      5195.712,
+      2280.6788,
+      -548.9516,
+      -6014.2332,
+      -116.1438,
+      30626.4395
+     ],
+     "concentracion": 0.9746,
+     "estado": "resoluble",
+     "motivo": null
+    },
+    "cut_iso": "2026-11-16T20:15:00.502000+00:00",
+    "cut_ms": 1794860100502,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": "2026-11-16T20:15:10.491000+00:00",
+      "as_of_ms": 1794860110491,
+      "buy_notional": 9281.2391,
+      "delta": -4328.2961,
+      "estado": "resoluble",
+      "fin_ms": 1794860110000,
+      "inicio_iso": "2026-11-16T20:15:00+00:00",
+      "inicio_ms": 1794860100000,
+      "motivo": null,
+      "precio_close": 0.21103,
+      "precio_open": 0.21091,
+      "sell_notional": 13609.5352
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:20.259000+00:00",
+      "as_of_ms": 1794860120259,
+      "buy_notional": 5622.0468,
+      "delta": -4466.5485,
+      "estado": "resoluble",
+      "fin_ms": 1794860120000,
+      "inicio_iso": "2026-11-16T20:15:10+00:00",
+      "inicio_ms": 1794860110000,
+      "motivo": null,
+      "precio_close": 0.21078,
+      "precio_open": 0.21111,
+      "sell_notional": 10088.5954
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:30.295000+00:00",
+      "as_of_ms": 1794860130295,
+      "buy_notional": 1567.9041,
+      "delta": 274.9989,
+      "estado": "resoluble",
+      "fin_ms": 1794860130000,
+      "inicio_iso": "2026-11-16T20:15:20+00:00",
+      "inicio_ms": 1794860120000,
+      "motivo": null,
+      "precio_close": 0.21059,
+      "precio_open": 0.2107,
+      "sell_notional": 1292.9052
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:41.005000+00:00",
+      "as_of_ms": 1794860141005,
+      "buy_notional": 5112.4661,
+      "delta": 225.1118,
+      "estado": "resoluble",
+      "fin_ms": 1794860140000,
+      "inicio_iso": "2026-11-16T20:15:30+00:00",
+      "inicio_ms": 1794860130000,
+      "motivo": null,
+      "precio_close": 0.2101,
+      "precio_open": 0.21066,
+      "sell_notional": 4887.3543
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:50.924000+00:00",
+      "as_of_ms": 1794860150924,
+      "buy_notional": 1173.0785,
+      "delta": 142.197,
+      "estado": "resoluble",
+      "fin_ms": 1794860150000,
+      "inicio_iso": "2026-11-16T20:15:40+00:00",
+      "inicio_ms": 1794860140000,
+      "motivo": null,
+      "precio_close": 0.20994,
+      "precio_open": 0.2101,
+      "sell_notional": 1030.8815
+     },
+     {
+      "as_of_iso": "2026-11-16T20:16:00.258000+00:00",
+      "as_of_ms": 1794860160258,
+      "buy_notional": 1897.2435,
+      "delta": 364.9124,
+      "estado": "resoluble",
+      "fin_ms": 1794860160000,
+      "inicio_iso": "2026-11-16T20:15:50+00:00",
+      "inicio_ms": 1794860150000,
+      "motivo": null,
+      "precio_close": 0.2101,
+      "precio_open": 0.21001,
+      "sell_notional": 1532.3311
+     }
+    ],
+    "direccion": "LONG",
+    "entrada_original_ms": 1794860160000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 2,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": true
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 73.2998,
+     "delta_2_bps": 31.1751,
+     "delta_3_bps": 85.5845,
+     "estado": "resoluble",
+     "flujo_alineado_2": 3138.2724,
+     "flujo_alineado_3": 31423.5017,
+     "frenada_avance": false,
+     "frenada_impacto": true,
+     "impacto_2_bps_por_1k": 9.9338,
+     "impacto_3_bps_por_1k": 2.7236,
+     "impacto_relativo": 0.2742,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -39.8218,
+     "disponibilidad_iso": "2026-11-16T20:16:00.474000+00:00",
+     "disponibilidad_ms": 1794860160474,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:16:00+00:00",
+     "fin_ms": 1794860160000,
+     "flujo_alineado": -7787.6245,
+     "inicio_iso": "2026-11-16T20:15:00+00:00",
+     "inicio_ms": 1794860100000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.2101,
+     "profundidad_contraria": 2146.229,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_giro": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -39.8218,
+     "disponibilidad_iso": "2026-11-16T20:16:00.474000+00:00",
+     "disponibilidad_ms": 1794860160474,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:16:00+00:00",
+     "fin_ms": 1794860160000,
+     "flujo_alineado": -7787.6245,
+     "inicio_iso": "2026-11-16T20:15:00+00:00",
+     "inicio_ms": 1794860100000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.2101,
+     "profundidad_contraria": 2146.229,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_precio_sin_avance": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -27.1299,
+     "disponibilidad_iso": "2026-11-16T20:17:00.612000+00:00",
+     "disponibilidad_ms": 1794860220612,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:17:00+00:00",
+     "fin_ms": 1794860220000,
+     "flujo_alineado": 1368.5767,
+     "inicio_iso": "2026-11-16T20:16:00+00:00",
+     "inicio_ms": 1794860160000,
+     "k": 1,
+     "motivo": null,
+     "precio_cierre": 0.20953,
+     "profundidad_contraria": 2494.2349,
+     "tipo": "precio_sin_avance",
+     "tipos": [
+      "debilitamiento",
+      "precio_sin_avance"
+     ]
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_totales": 6,
+     "bloques_utiles": 2,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 93.7366,
+     "aporte_profundidad_pct": 6.2634,
+     "estado": "resoluble",
+     "flujo_alineado_1": 2001.2484,
+     "flujo_alineado_3": 31423.5017,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 3118.7238,
+     "profundidad_3": 2594.5607,
+     "profundidad_cae_pct": -16.807,
+     "q_1": 0.6417,
+     "q_3": 12.1113,
+     "q_crecimiento": 18.8741
+    },
+    "resultado_cambio": {
+     "adverso_bps": -153.25853425638525,
+     "continuacion_bps": -67.3192,
+     "cut_cambio_iso": "2026-11-16T20:16:00.474000+00:00",
+     "cut_cambio_ms": 1794860160474,
+     "demora_entrada_ms": 59526,
+     "entrada_ms": 1794860220000,
+     "estado": "resoluble",
+     "favorable_bps": 26.25925041776167,
+     "motivo": null,
+     "precio_entrada": 0.20945,
+     "precio_salida": 0.20804,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 67.3192,
+     "reversion_motivo": null,
+     "salida_ms": 1794860520000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "adverso_bps": -153.25853425638525,
+     "continuacion_bps": -67.3192,
+     "cut_cambio_iso": "2026-11-16T20:16:00.474000+00:00",
+     "cut_cambio_ms": 1794860160474,
+     "demora_entrada_ms": 59526,
+     "entrada_ms": 1794860220000,
+     "estado": "resoluble",
+     "favorable_bps": 26.25925041776167,
+     "motivo": null,
+     "precio_entrada": 0.20945,
+     "precio_salida": 0.20804,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 67.3192,
+     "reversion_motivo": null,
+     "salida_ms": 1794860520000,
+     "trayectoria_completa": true
+    },
+    "retorno_original_bps": -156.5548,
+    "salida_original_ms": 1794860460000,
+    "symbol": "ARIAUSDT",
+    "terna": "ARIAUSDT|1794860040000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794860100490,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": 83.656,
+     "estado": "resoluble",
+     "flujo_alineado_30s": 24496.0625,
+     "giro_30s": false,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794860070000,
+      1794860100000
+     ]
+    }
+   }
+  ],
+  "verificacion_publicado": {
+   "coinciden": 4,
+   "detalle": [
+    {
+     "coincide": true,
+     "retorno_publicado_bps": -99.0371,
+     "retorno_recalculado_bps": -99.0371,
+     "terna": "BLESSUSDT|1794857340000"
+    },
+    {
+     "coincide": true,
+     "retorno_publicado_bps": 44.1176,
+     "retorno_recalculado_bps": 44.1176,
+     "terna": "STRKUSDT|1794858900000"
+    },
+    {
+     "coincide": true,
+     "retorno_publicado_bps": -142.0179,
+     "retorno_recalculado_bps": -142.0179,
+     "terna": "BLESSUSDT|1794859500000"
+    },
+    {
+     "coincide": true,
+     "retorno_publicado_bps": -156.5548,
+     "retorno_recalculado_bps": -156.5548,
+     "terna": "ARIAUSDT|1794860040000"
+    }
+   ]
+  }
+ },
+ "cobertura_de_velas": {
+  "consultas": 161,
+  "consultas_rechazadas": [],
+  "duplicadas_contradictorias": 4,
+  "duplicadas_identicas": 7642,
+  "ejemplos_contradiccion": [
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   },
+   {
+    "nueva": {
+     "close": 0.008605,
+     "high": 0.008605,
+     "low": 0.008592,
+     "open": 0.008592
+    },
+    "open_time": 1794862680000,
+    "previa": {
+     "close": 0.008594,
+     "high": 0.008594,
+     "low": 0.008594,
+     "open": 0.008594
+    },
+    "symbol": "4USDT"
+   }
+  ],
+  "filas_leidas": 10143,
+  "provisional_actualizada": 0,
+  "provisional_ignorada": 0,
+  "provisional_reemplazada_por_final": 135,
+  "run_id_distinto": 0,
+  "simbolos": [
+   "4USDT",
+   "AAVEUSDT",
+   "AGTUSDT",
+   "AIOTUSDT",
+   "ARIAUSDT",
+   "BANKUSDT",
+   "BLESSUSDT",
+   "BMTUSDT",
+   "BTWUSDT",
+   "BULLAUSDT",
+   "CROSSUSDT",
+   "ENJUSDT",
+   "EVAAUSDT",
+   "FLOCKUSDT",
+   "FLOWUSDT",
+   "HUMAUSDT",
+   "ONUSDT",
+   "PLAYUSDT",
+   "SOPHUSDT",
+   "SPACEUSDT",
+   "STOUSDT",
+   "STRKUSDT",
+   "XAUTUSDT",
+   "XLMUSDT",
+   "ZILUSDT"
+  ],
+  "velas_contradictorias": 4,
+  "velas_provisionales_finales": 26,
+  "velas_unicas": 2362
+ },
+ "conclusion_cambio": {
+  "conclusion": "el primer cambio muestra mejora en esta muestra",
+  "evidencia": [
+   "delta medio 11.2662 bps; mediana 4.4169 bps",
+   "LONG: n=55, delta medio 7.5599 bps, mediana 4.4169 bps",
+   "SHORT: n=54, delta medio 15.0412 bps, mediana 4.8008 bps"
+  ],
+  "minimo_pares": 30,
+  "pares_comparables": 109,
+  "regla": "con 30 o mas pares, la continuacion desde el primer cambio muestra mejora solo si la media y la mediana del delta (cambio - original) son positivas"
+ },
+ "conclusion_giro": {
+  "conclusion": "el giro no muestra reversion en esta muestra",
+  "evidencia": [
+   "reversion media -2.2881 bps; mediana -5.5934 bps",
+   "LONG: n=50, reversion media -19.2987 bps, mediana -12.7109 bps",
+   "SHORT: n=53, reversion media 13.7597 bps, mediana -4.9505 bps"
+  ],
+  "minimo_pares": 30,
+  "pares_comparables": 103,
+  "regla": "con 30 o mas pares, el giro anticipa reversion solo si la media y la mediana de la reversion medida desde su disponibilidad son positivas"
+ },
+ "controles": {
+  "at_cut": {
+   "avance_vs_3m_flujo": {
+    "estados": {
+     "UNKNOWN": 87,
+     "resoluble": 56
+    },
+    "motivos": {
+     "historia_insuficiente": 87
+    },
+    "normalizada": {
+     "max": 17.7205,
+     "media": 2.613,
+     "mediana": 1.6763,
+     "min": 0.1003,
+     "n": 56
+    },
+    "por_direccion": {
+     "LONG": {
+      "max": 17.7205,
+      "media": 2.9545,
+      "mediana": 1.9935,
+      "min": 0.1003,
+      "n": 29
+     },
+     "SHORT": {
+      "max": 8.1651,
+      "media": 2.2461,
+      "mediana": 1.4101,
+      "min": 0.3394,
+      "n": 27
+     }
+    },
+    "referencia_bps": {
+     "max": 82.8954,
+     "media": 40.7655,
+     "mediana": 44.792,
+     "min": 5.8737,
+     "n": 56
+    }
+   },
+   "avance_vs_ternas": {
+    "estados": {
+     "UNKNOWN": 108,
+     "resoluble": 35
+    },
+    "motivos": {
+     "historia_insuficiente": 108
+    },
+    "normalizada": {
+     "max": 8.5962,
+     "media": 2.1358,
+     "mediana": 1.5987,
+     "min": 0.5529,
+     "n": 35
+    },
+    "por_direccion": {
+     "LONG": {
+      "max": 8.5962,
+      "media": 2.5696,
+      "mediana": 1.7949,
+      "min": 0.5552,
+      "n": 14
+     },
+     "SHORT": {
+      "max": 5.3458,
+      "media": 1.8466,
+      "mediana": 1.5987,
+      "min": 0.5529,
+      "n": 21
+     }
+    }
+   },
+   "concentracion_10s": {
+    "concentracion": {
+     "max": 182.162,
+     "media": 5.1211,
+     "mediana": 0.9374,
+     "min": 0.2361,
+     "n": 112
+    },
+    "estados": {
+     "UNKNOWN": 31,
+     "resoluble": 112
+    },
+    "motivos": {
+     "buckets_10s_incompletos": 31
+    },
+    "por_direccion": {
+     "LONG": {
+      "max": 182.162,
+      "media": 7.8499,
+      "mediana": 0.9746,
+      "min": 0.2361,
+      "n": 59
+     },
+     "SHORT": {
+      "max": 15.8287,
+      "media": 2.0835,
+      "mediana": 0.9198,
+      "min": 0.4038,
+      "n": 53
+     }
+    }
+   },
+   "impacto": {
+    "avance_ultima_ventana_pct": {
+     "max": 98.6515,
+     "media": 55.483,
+     "mediana": 58.9796,
+     "min": 1.4247,
+     "n": 81
+    },
+    "estados": {
+     "UNKNOWN": 62,
+     "resoluble": 81
+    },
+    "frenada_avance": 10,
+    "frenada_impacto": 33,
+    "impacto_relativo": {
+     "max": 1460.9924,
+     "media": 27.2927,
+     "mediana": 0.9097,
+     "min": 0.0049,
+     "n": 81
+    },
+    "motivos": {
+     "presion_o_profundidad_no_positiva": 62
+    },
+    "por_direccion": {
+     "LONG": {
+      "max": 1460.9924,
+      "media": 41.9605,
+      "mediana": 0.896,
+      "min": 0.0724,
+      "n": 41
+     },
+     "SHORT": {
+      "max": 278.96,
+      "media": 12.2581,
+      "mediana": 1.2286,
+      "min": 0.0049,
+      "n": 40
+     }
+    }
+   },
+   "q_descomposicion": {
+    "aporte_importe_pct": {
+     "max": 265.0706,
+     "media": 108.4602,
+     "mediana": 100.7197,
+     "min": -0.5754,
+     "n": 32
+    },
+    "estados": {
+     "UNKNOWN": 111,
+     "resoluble": 32
+    },
+    "importe_crece": 31,
+    "motivos": {
+     "presion_o_profundidad_no_positiva": 91,
+     "q_no_crece": 20
+    },
+    "notional_total_crece": 25,
+    "por_direccion": {
+     "LONG": {
+      "max": 265.0706,
+      "media": 110.4629,
+      "mediana": 100.5861,
+      "min": -0.5754,
+      "n": 14
+     },
+     "SHORT": {
+      "max": 164.7455,
+      "media": 106.9025,
+      "mediana": 100.7197,
+      "min": 77.7242,
+      "n": 18
+     }
+    },
+    "profundidad_cae_pct": {
+     "max": 58.9438,
+     "media": 1.6347,
+     "mediana": 0.7716,
+     "min": -49.1699,
+     "n": 32
+    }
+   },
+   "ultimos_30s": {
+    "delta_precio_30s_bps": {
+     "max": 128.0559,
+     "media": 13.3114,
+     "mediana": 6.3825,
+     "min": -69.2539,
+     "n": 124
+    },
+    "estados": {
+     "UNKNOWN": 19,
+     "resoluble": 124
+    },
+    "flujo_alineado_30s": {
+     "max": 122419.2318,
+     "media": 6358.1656,
+     "mediana": 1015.9505,
+     "min": -45130.7017,
+     "n": 124
+    },
+    "giro_30s": 43,
+    "motivos": {
+     "buckets_10s_incompletos": 19
+    },
+    "por_direccion": {
+     "LONG": {
+      "max": 122419.2318,
+      "media": 5135.6991,
+      "mediana": 1237.8036,
+      "min": -11379.0069,
+      "n": 62
+     },
+     "SHORT": {
+      "max": 93153.0676,
+      "media": 7580.6321,
+      "mediana": 386.4706,
+      "min": -45130.7017,
+      "n": 62
+     }
+    },
+    "presion_sin_avance_30s": 15
+   }
+  },
+  "cambios": {
+   "eventos": {
+    "primer_cambio": {
+     "demora_disponibilidad_ms": {
+      "max": 363160.0,
+      "media": 72683.5115,
+      "mediana": 60059.0,
+      "min": 43759.0,
+      "n": 131
+     },
+     "estados": {
+      "UNKNOWN": 9,
+      "cambio_observado": 131,
+      "sin_cambio": 3
+     },
+     "k": {
+      "max": 5.0,
+      "media": 0.2137,
+      "mediana": 0.0,
+      "min": 0.0,
+      "n": 131
+     },
+     "tipos": {
+      "debilitamiento": 27,
+      "giro": 79,
+      "precio_sin_avance": 9,
+      "profundidad_deja_de_caer": 16
+     }
+    },
+    "primer_debilitamiento": {
+     "demora_disponibilidad_ms": {
+      "max": 360212.0,
+      "media": 138755.8406,
+      "mediana": 119896.0,
+      "min": 43759.0,
+      "n": 69
+     },
+     "estados": {
+      "UNKNOWN": 9,
+      "cambio_observado": 69,
+      "sin_cambio": 65
+     },
+     "k": {
+      "max": 5.0,
+      "media": 1.3333,
+      "mediana": 1.0,
+      "min": 0.0,
+      "n": 69
+     },
+     "tipos": {
+      "debilitamiento": 69
+     }
+    },
+    "primer_giro": {
+     "demora_disponibilidad_ms": {
+      "max": 363856.0,
+      "media": 107807.1707,
+      "mediana": 63644.0,
+      "min": 55381.0,
+      "n": 123
+     },
+     "estados": {
+      "UNKNOWN": 9,
+      "cambio_observado": 123,
+      "sin_cambio": 11
+     },
+     "k": {
+      "max": 5.0,
+      "media": 0.7967,
+      "mediana": 0.0,
+      "min": 0.0,
+      "n": 123
+     },
+     "tipos": {
+      "giro": 123
+     }
+    },
+    "primer_precio_sin_avance": {
+     "demora_disponibilidad_ms": {
+      "max": 360212.0,
+      "media": 155206.7869,
+      "mediana": 119985.0,
+      "min": 43759.0,
+      "n": 61
+     },
+     "estados": {
+      "UNKNOWN": 9,
+      "cambio_observado": 61,
+      "sin_cambio": 73
+     },
+     "k": {
+      "max": 5.0,
+      "media": 1.6066,
+      "mediana": 1.0,
+      "min": 0.0,
+      "n": 61
+     },
+     "tipos": {
+      "precio_sin_avance": 61
+     }
+    },
+    "primer_profundidad_deja_de_caer": {
+     "demora_disponibilidad_ms": {
+      "max": 360005.0,
+      "media": 138032.7849,
+      "mediana": 119591.0,
+      "min": 57567.0,
+      "n": 93
+     },
+     "estados": {
+      "UNKNOWN": 9,
+      "cambio_observado": 93,
+      "sin_cambio": 41
+     },
+     "k": {
+      "max": 5.0,
+      "media": 1.3011,
+      "mediana": 1.0,
+      "min": 0.0,
+      "n": 93
+     },
+     "tipos": {
+      "profundidad_deja_de_caer": 93
+     }
+    }
+   },
+   "no_resolubles_resultado": {
+    "sin_cambio_en_horizonte": 12,
+    "sin_velas_para_simbolo": 17,
+    "vela_entrada_ausente": 3
+   },
+   "por_direccion_primer_cambio": {
+    "LONG": {
+     "continuacion_media_bps": 20.2236,
+     "continuacion_mediana_bps": 11.7841,
+     "continuacion_positiva": 33,
+     "delta_cero": 0,
+     "delta_media_bps": 7.5599,
+     "delta_mediana_bps": 4.4169,
+     "delta_negativo": 23,
+     "delta_positivo": 32,
+     "n": 55,
+     "original_media_bps": 12.6636,
+     "original_mediana_bps": 9.1678,
+     "reversion_media_bps": -28.9625,
+     "reversion_mediana_bps": -19.4845,
+     "reversion_n": 32,
+     "reversion_positiva": 9
+    },
+    "SHORT": {
+     "continuacion_media_bps": -9.6513,
+     "continuacion_mediana_bps": 5.0497,
+     "continuacion_positiva": 29,
+     "delta_cero": 1,
+     "delta_media_bps": 15.0412,
+     "delta_mediana_bps": 4.8008,
+     "delta_negativo": 20,
+     "delta_positivo": 33,
+     "n": 54,
+     "original_media_bps": -24.6924,
+     "original_mediana_bps": -1.2528,
+     "reversion_media_bps": 18.1089,
+     "reversion_mediana_bps": -5.102,
+     "reversion_n": 35,
+     "reversion_positiva": 15
+    }
+   },
+   "por_direccion_primer_giro": {
+    "LONG": {
+     "continuacion_media_bps": 19.2987,
+     "continuacion_mediana_bps": 12.7109,
+     "continuacion_positiva": 31,
+     "delta_cero": 0,
+     "delta_media_bps": 8.3304,
+     "delta_mediana_bps": 11.7121,
+     "delta_negativo": 18,
+     "delta_positivo": 32,
+     "n": 50,
+     "original_media_bps": 10.9684,
+     "original_mediana_bps": 7.1607,
+     "reversion_media_bps": -19.2987,
+     "reversion_mediana_bps": -12.7109,
+     "reversion_n": 50,
+     "reversion_positiva": 19
+    },
+    "SHORT": {
+     "continuacion_media_bps": -13.7597,
+     "continuacion_mediana_bps": 4.9505,
+     "continuacion_positiva": 27,
+     "delta_cero": 1,
+     "delta_media_bps": 14.2646,
+     "delta_mediana_bps": 5.7707,
+     "delta_negativo": 21,
+     "delta_positivo": 31,
+     "n": 53,
+     "original_media_bps": -28.0243,
+     "original_mediana_bps": -1.4074,
+     "reversion_media_bps": 13.7597,
+     "reversion_mediana_bps": -4.9505,
+     "reversion_n": 53,
+     "reversion_positiva": 24
+    }
+   },
+   "por_tipo_primer_cambio": {
+    "debilitamiento": {
+     "continuacion_media_bps": 20.8116,
+     "continuacion_mediana_bps": 20.5158,
+     "continuacion_positiva": 13,
+     "delta_cero": 0,
+     "delta_media_bps": 20.3649,
+     "delta_mediana_bps": 2.2921,
+     "delta_negativo": 11,
+     "delta_positivo": 12,
+     "n": 23,
+     "original_media_bps": 0.4467,
+     "original_mediana_bps": 22.1963,
+     "reversion_media_bps": null,
+     "reversion_mediana_bps": null,
+     "reversion_n": 0,
+     "reversion_positiva": 0
+    },
+    "giro": {
+     "continuacion_media_bps": 4.3729,
+     "continuacion_mediana_bps": 11.562,
+     "continuacion_positiva": 42,
+     "delta_cero": 1,
+     "delta_media_bps": 12.8992,
+     "delta_mediana_bps": 7.9419,
+     "delta_negativo": 25,
+     "delta_positivo": 41,
+     "n": 67,
+     "original_media_bps": -8.5263,
+     "original_mediana_bps": -0.0,
+     "reversion_media_bps": -4.3729,
+     "reversion_mediana_bps": -11.562,
+     "reversion_n": 67,
+     "reversion_positiva": 24
+    },
+    "precio_sin_avance": {
+     "continuacion_media_bps": 23.9538,
+     "continuacion_mediana_bps": 22.8055,
+     "continuacion_positiva": 5,
+     "delta_cero": 0,
+     "delta_media_bps": 10.6848,
+     "delta_mediana_bps": 6.157,
+     "delta_negativo": 1,
+     "delta_positivo": 5,
+     "n": 6,
+     "original_media_bps": 13.2691,
+     "original_mediana_bps": 9.627,
+     "reversion_media_bps": null,
+     "reversion_mediana_bps": null,
+     "reversion_n": 0,
+     "reversion_positiva": 0
+    },
+    "profundidad_deja_de_caer": {
+     "continuacion_media_bps": -24.9421,
+     "continuacion_mediana_bps": -4.2499,
+     "continuacion_positiva": 2,
+     "delta_cero": 0,
+     "delta_media_bps": -12.9794,
+     "delta_mediana_bps": 1.8655,
+     "delta_negativo": 6,
+     "delta_positivo": 7,
+     "n": 13,
+     "original_media_bps": -11.9627,
+     "original_mediana_bps": -4.995,
+     "reversion_media_bps": null,
+     "reversion_mediana_bps": null,
+     "reversion_n": 0,
+     "reversion_positiva": 0
+    }
+   },
+   "resultado_primer_cambio": {
+    "continuacion_media_bps": 5.4232,
+    "continuacion_mediana_bps": 5.3094,
+    "continuacion_positiva": 62,
+    "delta_cero": 1,
+    "delta_media_bps": 11.2662,
+    "delta_mediana_bps": 4.4169,
+    "delta_negativo": 43,
+    "delta_positivo": 65,
+    "n": 109,
+    "original_media_bps": -5.843,
+    "original_mediana_bps": 2.5823,
+    "reversion_media_bps": -4.3729,
+    "reversion_mediana_bps": -11.562,
+    "reversion_n": 67,
+    "reversion_positiva": 24
+   },
+   "resultado_primer_giro": {
+    "continuacion_media_bps": 2.2881,
+    "continuacion_mediana_bps": 5.5934,
+    "continuacion_positiva": 58,
+    "delta_cero": 1,
+    "delta_media_bps": 11.3839,
+    "delta_mediana_bps": 9.2382,
+    "delta_negativo": 39,
+    "delta_positivo": 63,
+    "n": 103,
+    "original_media_bps": -9.0958,
+    "original_mediana_bps": -1.0982,
+    "reversion_media_bps": -2.2881,
+    "reversion_mediana_bps": -5.5934,
+    "reversion_n": 103,
+    "reversion_positiva": 43
+   },
+   "reutiliza_entrada_original": 0
+  },
+  "cruce_visible_vs_resultado": {
+   "aporte_importe_pct": {
+    "cero": {
+     "max": 153.7793,
+     "media": 127.8259,
+     "mediana": 127.8259,
+     "min": 101.8725,
+     "n": 2
+    },
+    "negativo": {
+     "max": 128.4676,
+     "media": 88.3861,
+     "mediana": 94.7752,
+     "min": -0.5754,
+     "n": 11
+    },
+    "positivo": {
+     "max": 265.0706,
+     "media": 121.8355,
+     "mediana": 100.1519,
+     "min": 96.5392,
+     "n": 12
+    }
+   },
+   "avance_vs_3m_flujo": {
+    "cero": {
+     "max": 2.0443,
+     "media": 1.6222,
+     "mediana": 1.6222,
+     "min": 1.2002,
+     "n": 2
+    },
+    "negativo": {
+     "max": 17.7205,
+     "media": 3.2627,
+     "mediana": 1.8471,
+     "min": 0.3394,
+     "n": 27
+    },
+    "positivo": {
+     "max": 8.1651,
+     "media": 2.0366,
+     "mediana": 1.5667,
+     "min": 0.1003,
+     "n": 27
+    }
+   },
+   "concentracion_10s": {
+    "cero": {
+     "max": null,
+     "media": null,
+     "mediana": null,
+     "min": null,
+     "n": 0
+    },
+    "negativo": {
+     "max": 25.8266,
+     "media": 2.7936,
+     "mediana": 0.9935,
+     "min": 0.4038,
+     "n": 50
+    },
+    "positivo": {
+     "max": 182.162,
+     "media": 9.2394,
+     "mediana": 0.9031,
+     "min": 0.2361,
+     "n": 45
+    }
+   },
+   "frenada_impacto": {
+    "UNKNOWN": {
+     "cero": 1,
+     "negativo": 24,
+     "positivo": 26
+    },
+    "false": {
+     "cero": 1,
+     "negativo": 18,
+     "positivo": 22
+    },
+    "true": {
+     "cero": 1,
+     "negativo": 13,
+     "positivo": 9
+    }
+   },
+   "giro_30s": {
+    "UNKNOWN": {
+     "cero": 2,
+     "negativo": 2,
+     "positivo": 6
+    },
+    "false": {
+     "negativo": 35,
+     "positivo": 33
+    },
+    "true": {
+     "cero": 1,
+     "negativo": 18,
+     "positivo": 18
+    }
+   },
+   "presion_sin_avance_30s": {
+    "UNKNOWN": {
+     "cero": 2,
+     "negativo": 2,
+     "positivo": 6
+    },
+    "false": {
+     "cero": 1,
+     "negativo": 46,
+     "positivo": 46
+    },
+    "true": {
+     "negativo": 7,
+     "positivo": 5
+    }
+   }
+  },
+  "original_143_recalculado": {
+   "aciertos": 57,
+   "adverso_mediano_bps": -54.1834,
+   "adverso_medio_bps": -84.7079,
+   "adverso_sobre": 115,
+   "episodios": 143,
+   "fallos": 55,
+   "ic95_media_bps": [
+    -29.3471,
+    10.8317
+   ],
+   "motivos_no_resoluble": {
+    "sin_velas_para_simbolo": 23,
+    "vela_entrada_ausente": 5
+   },
+   "neutrales": 3,
+   "no_resolubles": 28,
+   "resolubles": 115,
+   "resolubles_con_entrada_provisional": 0,
+   "resolubles_con_salida_provisional": 0,
+   "resolubles_con_trayectoria_completa": 115,
+   "retorno_mediano_bps": -0.0,
+   "retorno_medio_bps": -8.2611,
+   "simbolo_dominante": {
+    "cuota": 0.087,
+    "episodios": 10,
+    "symbol": "SPACEUSDT"
+   },
+   "simbolos": {
+    "4USDT": 7,
+    "AAVEUSDT": 2,
+    "AGTUSDT": 2,
+    "AIOTUSDT": 8,
+    "ARIAUSDT": 5,
+    "BANKUSDT": 4,
+    "BLESSUSDT": 8,
+    "BMTUSDT": 6,
+    "BTWUSDT": 7,
+    "BULLAUSDT": 7,
+    "CROSSUSDT": 7,
+    "ENJUSDT": 1,
+    "EVAAUSDT": 8,
+    "FLOCKUSDT": 1,
+    "FLOWUSDT": 1,
+    "HUMAUSDT": 6,
+    "ONUSDT": 6,
+    "PLAYUSDT": 1,
+    "SOPHUSDT": 4,
+    "SPACEUSDT": 10,
+    "STOUSDT": 2,
+    "STRKUSDT": 5,
+    "XAUTUSDT": 2,
+    "XLMUSDT": 4,
+    "ZILUSDT": 1
+   },
+   "tasa_acierto": 0.4957
+  }
+ },
+ "derivados_fuera_de_git": {
+  "archivos_sha256": {
+   "anclas_cambios.jsonl": "6ca94a9408edcdab8c6399582938e79232c8986e3f84a3ff8b1320e77e3db3ea",
+   "anclas_factores.jsonl": "1e923a868c7ff42bda27ebc1dcc3284ecf18dcbd81045406640fbae4eac355eb",
+   "anclas_no_resolubles.jsonl": "fd4ae81e2458d6e9da7f2b060889ab2d1fb4b8c5420a52f2af5bf8a56b7557a0",
+   "casos_bloques.jsonl": "d62a05d8c470c92218d896c8f9c65c46f16ecbbda859f441071e63a861c3f972",
+   "casos_detalle_10s.jsonl": "1efc77baf12251846a4c347f6860bb9c81c4acd18e037d0326770a8983cdd22b",
+   "casos_factores.jsonl": "9870748b015edcf661eb37f573071777289af8edd487ee7e5eccd00fa66a0675",
+   "casos_ventanas.jsonl": "a4c8927aca9992d22fe6f6d37320119ad17872cc12866decb267cc543db3d430"
+  },
+  "directorio": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a-diagnostico-factores-v1"
+ },
+ "diagnostico_cuatro_casos": {
+  "casos": 4,
+  "detalle": [
+   {
+    "avance_bps": 115.7521,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 115.7521,
+     "bloques_disponibles": 0,
+     "estado": "UNKNOWN",
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 1,
+     "motivo": "historia_insuficiente",
+     "rango_previo_ms": [
+      1794857160000,
+      1794857220000
+     ],
+     "referencia_bps": null
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 115.7521,
+     "estado": "UNKNOWN",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": null,
+     "ternas_previas_no_solapadas": 0
+    },
+    "concentracion_10s": {
+     "bucket_dominante_iso": "2026-11-16T19:29:40+00:00",
+     "bucket_dominante_ms": 1794857380000,
+     "buckets": [
+      -3242.7969,
+      128.7127,
+      1479.5968,
+      -23698.6947,
+      -30182.7653,
+      7442.7445
+     ],
+     "concentracion": 0.6279,
+     "estado": "resoluble",
+     "motivo": null
+    },
+    "cut_iso": "2026-11-16T19:30:01.355000+00:00",
+    "cut_ms": 1794857401355,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": "2026-11-16T19:30:11.211000+00:00",
+      "as_of_ms": 1794857411211,
+      "buy_notional": 36445.1312,
+      "delta": -22128.5576,
+      "estado": "resoluble",
+      "fin_ms": 1794857410000,
+      "inicio_iso": "2026-11-16T19:30:00+00:00",
+      "inicio_ms": 1794857400000,
+      "motivo": null,
+      "precio_close": 0.018031,
+      "precio_open": 0.018101,
+      "sell_notional": 58573.6888
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:21.153000+00:00",
+      "as_of_ms": 1794857421153,
+      "buy_notional": 35540.8559,
+      "delta": -1724.9843,
+      "estado": "resoluble",
+      "fin_ms": 1794857420000,
+      "inicio_iso": "2026-11-16T19:30:10+00:00",
+      "inicio_ms": 1794857410000,
+      "motivo": null,
+      "precio_close": 0.018025,
+      "precio_open": 0.01803,
+      "sell_notional": 37265.8402
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:31.196000+00:00",
+      "as_of_ms": 1794857431196,
+      "buy_notional": 36725.3271,
+      "delta": 3169.9106,
+      "estado": "resoluble",
+      "fin_ms": 1794857430000,
+      "inicio_iso": "2026-11-16T19:30:20+00:00",
+      "inicio_ms": 1794857420000,
+      "motivo": null,
+      "precio_close": 0.018037,
+      "precio_open": 0.018024,
+      "sell_notional": 33555.4165
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:41.147000+00:00",
+      "as_of_ms": 1794857441147,
+      "buy_notional": 20669.6498,
+      "delta": -14000.9382,
+      "estado": "resoluble",
+      "fin_ms": 1794857440000,
+      "inicio_iso": "2026-11-16T19:30:30+00:00",
+      "inicio_ms": 1794857430000,
+      "motivo": null,
+      "precio_close": 0.018021,
+      "precio_open": 0.018036,
+      "sell_notional": 34670.588
+     },
+     {
+      "as_of_iso": "2026-11-16T19:30:50.119000+00:00",
+      "as_of_ms": 1794857450119,
+      "buy_notional": 23109.8845,
+      "delta": -1993.0053,
+      "estado": "resoluble",
+      "fin_ms": 1794857450000,
+      "inicio_iso": "2026-11-16T19:30:40+00:00",
+      "inicio_ms": 1794857440000,
+      "motivo": null,
+      "precio_close": 0.018015,
+      "precio_open": 0.01802,
+      "sell_notional": 25102.8898
+     },
+     {
+      "as_of_iso": "2026-11-16T19:31:00.138000+00:00",
+      "as_of_ms": 1794857460138,
+      "buy_notional": 46618.3775,
+      "delta": 30379.2361,
+      "estado": "resoluble",
+      "fin_ms": 1794857460000,
+      "inicio_iso": "2026-11-16T19:30:50+00:00",
+      "inicio_ms": 1794857450000,
+      "motivo": null,
+      "precio_close": 0.018169,
+      "precio_open": 0.018023,
+      "sell_notional": 16239.1414
+     }
+    ],
+    "direccion": "SHORT",
+    "entrada_original_ms": 1794857460000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": true
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 60.4873,
+     "delta_2_bps": 45.864,
+     "delta_3_bps": 70.2101,
+     "estado": "resoluble",
+     "flujo_alineado_2": 17925.5767,
+     "flujo_alineado_3": 48073.2029,
+     "frenada_avance": false,
+     "frenada_impacto": true,
+     "impacto_2_bps_por_1k": 2.5586,
+     "impacto_3_bps_por_1k": 1.4605,
+     "impacto_relativo": 0.5708,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -36.458,
+     "disponibilidad_iso": "2026-11-16T19:31:00.252000+00:00",
+     "disponibilidad_ms": 1794857460252,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T19:31:00+00:00",
+     "fin_ms": 1794857460000,
+     "flujo_alineado": 6298.3386,
+     "inicio_iso": "2026-11-16T19:30:00+00:00",
+     "inicio_ms": 1794857400000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.018169,
+     "profundidad_contraria": 7666.1828,
+     "tipo": "debilitamiento",
+     "tipos": [
+      "debilitamiento",
+      "precio_sin_avance"
+     ]
+    },
+    "primer_giro": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": 0.5504,
+     "disponibilidad_iso": "2026-11-16T19:32:00.156000+00:00",
+     "disponibilidad_ms": 1794857520156,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T19:32:00+00:00",
+     "fin_ms": 1794857520000,
+     "flujo_alineado": -26049.4155,
+     "inicio_iso": "2026-11-16T19:31:00+00:00",
+     "inicio_ms": 1794857460000,
+     "k": 1,
+     "motivo": null,
+     "precio_cierre": 0.018168,
+     "profundidad_contraria": null,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_precio_sin_avance": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -36.458,
+     "disponibilidad_iso": "2026-11-16T19:31:00.252000+00:00",
+     "disponibilidad_ms": 1794857460252,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T19:31:00+00:00",
+     "fin_ms": 1794857460000,
+     "flujo_alineado": 6298.3386,
+     "inicio_iso": "2026-11-16T19:30:00+00:00",
+     "inicio_ms": 1794857400000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.018169,
+     "profundidad_contraria": 7666.1828,
+     "tipo": "precio_sin_avance",
+     "tipos": [
+      "debilitamiento",
+      "precio_sin_avance"
+     ]
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 96.2152,
+     "aporte_profundidad_pct": 3.7848,
+     "estado": "resoluble",
+     "flujo_alineado_1": 2289.7513,
+     "flujo_alineado_3": 48073.2029,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 8672.5498,
+     "profundidad_3": 7693.7785,
+     "profundidad_cae_pct": -11.2859,
+     "q_1": 0.264,
+     "q_3": 6.2483,
+     "q_crecimiento": 23.6658
+    },
+    "resultado_cambio": {
+     "adverso_bps": -234.51692815854574,
+     "continuacion_bps": -76.5208,
+     "cut_cambio_iso": "2026-11-16T19:31:00.252000+00:00",
+     "cut_cambio_ms": 1794857460252,
+     "demora_entrada_ms": 59748,
+     "entrada_ms": 1794857520000,
+     "estado": "resoluble",
+     "favorable_bps": 63.85906963941701,
+     "motivo": null,
+     "precio_entrada": 0.018165,
+     "precio_salida": 0.018304,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": null,
+     "reversion_motivo": "no_aplica",
+     "salida_ms": 1794857820000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "adverso_bps": -239.0262708597235,
+     "continuacion_bps": -66.0902,
+     "cut_cambio_iso": "2026-11-16T19:32:00.156000+00:00",
+     "cut_cambio_ms": 1794857520156,
+     "demora_entrada_ms": 59844,
+     "entrada_ms": 1794857580000,
+     "estado": "resoluble",
+     "favorable_bps": -0.0,
+     "motivo": null,
+     "precio_entrada": 0.018157,
+     "precio_salida": 0.018277,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 66.0902,
+     "reversion_motivo": null,
+     "salida_ms": 1794857880000,
+     "trayectoria_completa": true
+    },
+    "retorno_original_bps": -99.0371,
+    "salida_original_ms": 1794857760000,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794857340000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794857401211,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": 52.2035,
+     "estado": "resoluble",
+     "flujo_alineado_30s": 46438.7155,
+     "giro_30s": false,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794857370000,
+      1794857400000
+     ]
+    }
+   },
+   {
+    "avance_bps": 20.6186,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 20.6186,
+     "bloques_disponibles": 7,
+     "estado": "resoluble",
+     "extension_normalizada": 3.5103,
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 22,
+     "motivo": null,
+     "movimientos_bps": [
+      5.8737,
+      5.8685,
+      8.8028,
+      2.9386,
+      14.7016,
+      2.9464,
+      20.6307
+     ],
+     "rango_previo_ms": [
+      1794857460000,
+      1794858780000
+     ],
+     "referencia_bps": 5.8737
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 20.6186,
+     "estado": "UNKNOWN",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": 13.1991,
+     "ternas_previas_no_solapadas": 4
+    },
+    "concentracion_10s": {
+     "bucket_faltante_ms": 1794858900000,
+     "detalle": "bucket_10s_ausente",
+     "estado": "UNKNOWN",
+     "motivo": "buckets_10s_incompletos"
+    },
+    "cut_iso": "2026-11-16T19:56:04.530000+00:00",
+    "cut_ms": 1794858964530,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859270000,
+      "inicio_iso": "2026-11-16T20:01:00+00:00",
+      "inicio_ms": 1794859260000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859280000,
+      "inicio_iso": "2026-11-16T20:01:10+00:00",
+      "inicio_ms": 1794859270000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859290000,
+      "inicio_iso": "2026-11-16T20:01:20+00:00",
+      "inicio_ms": 1794859280000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859300000,
+      "inicio_iso": "2026-11-16T20:01:30+00:00",
+      "inicio_ms": 1794859290000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": null,
+      "as_of_ms": null,
+      "buy_notional": null,
+      "delta": null,
+      "estado": "UNKNOWN",
+      "fin_ms": 1794859310000,
+      "inicio_iso": "2026-11-16T20:01:40+00:00",
+      "inicio_ms": 1794859300000,
+      "motivo": "bucket_10s_ausente",
+      "precio_close": null,
+      "precio_open": null,
+      "sell_notional": null
+     },
+     {
+      "as_of_iso": "2026-11-16T20:02:03.011000+00:00",
+      "as_of_ms": 1794859323011,
+      "buy_notional": 1342.8527,
+      "delta": 1342.8527,
+      "estado": "resoluble",
+      "fin_ms": 1794859320000,
+      "inicio_iso": "2026-11-16T20:01:50+00:00",
+      "inicio_ms": 1794859310000,
+      "motivo": null,
+      "precio_close": 0.03415,
+      "precio_open": 0.03414,
+      "sell_notional": 0.0
+     }
+    ],
+    "direccion": "LONG",
+    "entrada_original_ms": 1794859020000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 1,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": false
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 71.4166,
+     "delta_2_bps": 5.891,
+     "delta_3_bps": 14.7189,
+     "estado": "resoluble",
+     "flujo_alineado_2": 681.8104,
+     "flujo_alineado_3": 1937.2903,
+     "frenada_avance": false,
+     "frenada_impacto": true,
+     "impacto_2_bps_por_1k": 8.6403,
+     "impacto_3_bps_por_1k": 7.5977,
+     "impacto_relativo": 0.8793,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [
+      {
+       "inicio_ms": 1794858960000,
+       "k": 0,
+       "motivo": "flujo_incompleto"
+      },
+      {
+       "inicio_ms": 1794859020000,
+       "k": 1,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859080000,
+       "k": 2,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859140000,
+       "k": 3,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859200000,
+       "k": 4,
+       "motivo": "flujo_ausente"
+      }
+     ],
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": "2026-11-16T20:02:03.027000+00:00",
+     "disponibilidad_ms": 1794859323027,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:02:00+00:00",
+     "fin_ms": 1794859320000,
+     "flujo_alineado": 1342.8527,
+     "inicio_iso": "2026-11-16T20:01:00+00:00",
+     "inicio_ms": 1794859260000,
+     "k": 5,
+     "motivo": null,
+     "precio_cierre": 0.03415,
+     "profundidad_contraria": 310092.246,
+     "tipo": "debilitamiento",
+     "tipos": [
+      "debilitamiento",
+      "profundidad_deja_de_caer"
+     ]
+    },
+    "primer_giro": {
+     "bloques_totales": 6,
+     "bloques_utiles": 1,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "primer_precio_sin_avance": {
+     "bloques_totales": 6,
+     "bloques_utiles": 1,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_no_usables_antes": [
+      {
+       "inicio_ms": 1794858960000,
+       "k": 0,
+       "motivo": "flujo_incompleto"
+      },
+      {
+       "inicio_ms": 1794859020000,
+       "k": 1,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859080000,
+       "k": 2,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859140000,
+       "k": 3,
+       "motivo": "flujo_ausente"
+      },
+      {
+       "inicio_ms": 1794859200000,
+       "k": 4,
+       "motivo": "flujo_ausente"
+      }
+     ],
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": "2026-11-16T20:02:03.027000+00:00",
+     "disponibilidad_ms": 1794859323027,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:02:00+00:00",
+     "fin_ms": 1794859320000,
+     "flujo_alineado": 1342.8527,
+     "inicio_iso": "2026-11-16T20:01:00+00:00",
+     "inicio_ms": 1794859260000,
+     "k": 5,
+     "motivo": null,
+     "precio_cierre": 0.03415,
+     "profundidad_contraria": 310092.246,
+     "tipo": "profundidad_deja_de_caer",
+     "tipos": [
+      "debilitamiento",
+      "profundidad_deja_de_caer"
+     ]
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 99.3482,
+     "aporte_profundidad_pct": 0.6518,
+     "estado": "resoluble",
+     "flujo_alineado_1": 423.1172,
+     "flujo_alineado_3": 1937.2903,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 298762.2216,
+     "profundidad_3": 295794.8387,
+     "profundidad_cae_pct": -0.9932,
+     "q_1": 0.0014,
+     "q_3": 0.0065,
+     "q_crecimiento": 4.6245
+    },
+    "resultado_cambio": {
+     "adverso_bps": -8.792497069166627,
+     "continuacion_bps": 20.5158,
+     "cut_cambio_iso": "2026-11-16T20:02:03.027000+00:00",
+     "cut_cambio_ms": 1794859323027,
+     "demora_entrada_ms": 56973,
+     "entrada_ms": 1794859380000,
+     "estado": "resoluble",
+     "favorable_bps": 26.377491207503212,
+     "motivo": null,
+     "precio_entrada": 0.03412,
+     "precio_salida": 0.03419,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": null,
+     "reversion_motivo": "no_aplica",
+     "salida_ms": 1794859680000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "continuacion_bps": null,
+     "cut_cambio_ms": null,
+     "entrada_ms": null,
+     "estado": "UNKNOWN",
+     "motivo": "sin_cambio_en_horizonte",
+     "reutiliza_entrada_original": null,
+     "reversion_bps": null,
+     "salida_ms": null
+    },
+    "retorno_original_bps": 44.1176,
+    "salida_original_ms": 1794859320000,
+    "symbol": "STRKUSDT",
+    "terna": "STRKUSDT|1794858900000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794858964513,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": 11.7716,
+     "estado": "resoluble",
+     "flujo_alineado_30s": 1390.0903,
+     "giro_30s": false,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794858930000,
+      1794858960000
+     ]
+    }
+   },
+   {
+    "avance_bps": 326.2365,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 326.2365,
+     "bloques_disponibles": 12,
+     "estado": "resoluble",
+     "extension_normalizada": 6.7281,
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 37,
+     "motivo": null,
+     "movimientos_bps": [
+      115.7521,
+      7.155,
+      54.6922,
+      42.0673,
+      35.2501,
+      11.0571,
+      42.2845,
+      301.281,
+      102.5786,
+      117.0255,
+      33.4183,
+      198.9323
+     ],
+     "rango_previo_ms": [
+      1794857160000,
+      1794859380000
+     ],
+     "referencia_bps": 48.4883
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 326.2365,
+     "estado": "resoluble",
+     "extension_normalizada": 5.3458,
+     "minimo_ternas_previas": 6,
+     "motivo": null,
+     "referencia_bps": 61.0272,
+     "ternas_previas_no_solapadas": 6
+    },
+    "concentracion_10s": {
+     "bucket_dominante_iso": "2026-11-16T20:05:20+00:00",
+     "bucket_dominante_ms": 1794859520000,
+     "buckets": [
+      -24132.4472,
+      -41978.3848,
+      -135901.671,
+      19618.8238,
+      9217.5955,
+      16294.2824
+     ],
+     "concentracion": 0.8663,
+     "estado": "resoluble",
+     "motivo": null
+    },
+    "cut_iso": "2026-11-16T20:06:00.464000+00:00",
+    "cut_ms": 1794859560464,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": "2026-11-16T20:06:10.213000+00:00",
+      "as_of_ms": 1794859570213,
+      "buy_notional": 46812.2767,
+      "delta": -42285.067,
+      "estado": "resoluble",
+      "fin_ms": 1794859570000,
+      "inicio_iso": "2026-11-16T20:06:00+00:00",
+      "inicio_ms": 1794859560000,
+      "motivo": null,
+      "precio_close": 0.017457,
+      "precio_open": 0.017579,
+      "sell_notional": 89097.3437
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:20.265000+00:00",
+      "as_of_ms": 1794859580265,
+      "buy_notional": 55283.9078,
+      "delta": -11182.8194,
+      "estado": "resoluble",
+      "fin_ms": 1794859580000,
+      "inicio_iso": "2026-11-16T20:06:10+00:00",
+      "inicio_ms": 1794859570000,
+      "motivo": null,
+      "precio_close": 0.017458,
+      "precio_open": 0.017447,
+      "sell_notional": 66466.7272
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:30.229000+00:00",
+      "as_of_ms": 1794859590229,
+      "buy_notional": 64168.703,
+      "delta": 22114.1438,
+      "estado": "resoluble",
+      "fin_ms": 1794859590000,
+      "inicio_iso": "2026-11-16T20:06:20+00:00",
+      "inicio_ms": 1794859580000,
+      "motivo": null,
+      "precio_close": 0.017486,
+      "precio_open": 0.017462,
+      "sell_notional": 42054.5592
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:40.283000+00:00",
+      "as_of_ms": 1794859600283,
+      "buy_notional": 42009.014,
+      "delta": -55.046,
+      "estado": "resoluble",
+      "fin_ms": 1794859600000,
+      "inicio_iso": "2026-11-16T20:06:30+00:00",
+      "inicio_ms": 1794859590000,
+      "motivo": null,
+      "precio_close": 0.017534,
+      "precio_open": 0.017496,
+      "sell_notional": 42064.0599
+     },
+     {
+      "as_of_iso": "2026-11-16T20:06:50.204000+00:00",
+      "as_of_ms": 1794859610204,
+      "buy_notional": 40394.9149,
+      "delta": 17169.4969,
+      "estado": "resoluble",
+      "fin_ms": 1794859610000,
+      "inicio_iso": "2026-11-16T20:06:40+00:00",
+      "inicio_ms": 1794859600000,
+      "motivo": null,
+      "precio_close": 0.017527,
+      "precio_open": 0.017533,
+      "sell_notional": 23225.4181
+     },
+     {
+      "as_of_iso": "2026-11-16T20:07:04.986000+00:00",
+      "as_of_ms": 1794859624986,
+      "buy_notional": 24077.3209,
+      "delta": 3237.7166,
+      "estado": "resoluble",
+      "fin_ms": 1794859620000,
+      "inicio_iso": "2026-11-16T20:06:50+00:00",
+      "inicio_ms": 1794859610000,
+      "motivo": null,
+      "precio_close": 0.017536,
+      "precio_open": 0.017526,
+      "sell_notional": 20839.6043
+     }
+    ],
+    "direccion": "SHORT",
+    "entrada_original_ms": 1794859620000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": true
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 98.6515,
+     "delta_2_bps": 4.4012,
+     "delta_3_bps": 321.977,
+     "estado": "resoluble",
+     "flujo_alineado_2": 11226.9833,
+     "flujo_alineado_3": 156881.8014,
+     "frenada_avance": false,
+     "frenada_impacto": false,
+     "impacto_2_bps_por_1k": 0.392,
+     "impacto_3_bps_por_1k": 2.0524,
+     "impacto_relativo": 5.2354,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": 27.2975,
+     "disponibilidad_iso": "2026-11-16T20:07:04.997000+00:00",
+     "disponibilidad_ms": 1794859624997,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:07:00+00:00",
+     "fin_ms": 1794859620000,
+     "flujo_alineado": 11001.575,
+     "inicio_iso": "2026-11-16T20:06:00+00:00",
+     "inicio_ms": 1794859560000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.017536,
+     "profundidad_contraria": 6928.2068,
+     "tipo": "debilitamiento",
+     "tipos": [
+      "debilitamiento"
+     ]
+    },
+    "primer_giro": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -53.2037,
+     "disponibilidad_iso": "2026-11-16T20:09:00.451000+00:00",
+     "disponibilidad_ms": 1794859740451,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:09:00+00:00",
+     "fin_ms": 1794859740000,
+     "flujo_alineado": -88844.7283,
+     "inicio_iso": "2026-11-16T20:08:00+00:00",
+     "inicio_ms": 1794859680000,
+     "k": 2,
+     "motivo": null,
+     "precio_cierre": 0.017573,
+     "profundidad_contraria": 6888.4514,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_precio_sin_avance": {
+     "bloques_totales": 6,
+     "bloques_utiles": 6,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -80.2367,
+     "disponibilidad_iso": "2026-11-16T20:10:00.436000+00:00",
+     "disponibilidad_ms": 1794859800436,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:10:00+00:00",
+     "fin_ms": 1794859800000,
+     "flujo_alineado": -47158.5636,
+     "inicio_iso": "2026-11-16T20:09:00+00:00",
+     "inicio_ms": 1794859740000,
+     "k": 3,
+     "motivo": null,
+     "precio_cierre": 0.017714,
+     "profundidad_contraria": 7777.2196,
+     "tipo": "profundidad_deja_de_caer",
+     "tipos": [
+      "giro",
+      "profundidad_deja_de_caer"
+     ]
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 97.4168,
+     "aporte_profundidad_pct": 2.5832,
+     "estado": "resoluble",
+     "flujo_alineado_1": 949.9308,
+     "flujo_alineado_3": 156881.8014,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 8725.2337,
+     "profundidad_3": 7620.176,
+     "profundidad_cae_pct": -12.6651,
+     "q_1": 0.1089,
+     "q_3": 20.5877,
+     "q_crecimiento": 189.1005
+    },
+    "resultado_cambio": {
+     "adverso_bps": -357.6537911301858,
+     "continuacion_bps": -152.7897,
+     "cut_cambio_iso": "2026-11-16T20:07:04.997000+00:00",
+     "cut_cambio_ms": 1794859624997,
+     "demora_entrada_ms": 55003,
+     "entrada_ms": 1794859680000,
+     "estado": "resoluble",
+     "favorable_bps": 28.612303290416197,
+     "motivo": null,
+     "precio_entrada": 0.017475,
+     "precio_salida": 0.017742,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": null,
+     "reversion_motivo": "no_aplica",
+     "salida_ms": 1794859980000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "adverso_bps": -212.7179371438248,
+     "continuacion_bps": -14.6702,
+     "cut_cambio_iso": "2026-11-16T20:09:00.451000+00:00",
+     "cut_cambio_ms": 1794859740451,
+     "demora_entrada_ms": 59549,
+     "entrada_ms": 1794859800000,
+     "estado": "resoluble",
+     "favorable_bps": 33.290075043728166,
+     "motivo": null,
+     "precio_entrada": 0.017723,
+     "precio_salida": 0.017749,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 14.6702,
+     "reversion_motivo": null,
+     "salida_ms": 1794860100000,
+     "trayectoria_completa": true
+    },
+    "retorno_original_bps": -142.0179,
+    "salida_original_ms": 1794859920000,
+    "symbol": "BLESSUSDT",
+    "terna": "BLESSUSDT|1794859500000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794859560450,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": -3.9825,
+     "estado": "resoluble",
+     "flujo_alineado_30s": -45130.7017,
+     "giro_30s": true,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794859530000,
+      1794859560000
+     ]
+    }
+   },
+   {
+    "avance_bps": 117.0264,
+    "avance_vs_3m_flujo": {
+     "avance_bruto_bps": 117.0264,
+     "bloques_disponibles": 0,
+     "estado": "UNKNOWN",
+     "minimo_bloques": 6,
+     "minutos_previos_contiguos": 0,
+     "motivo": "historia_insuficiente",
+     "rango_previo_ms": null,
+     "referencia_bps": null
+    },
+    "avance_vs_ternas": {
+     "avance_bruto_bps": 117.0264,
+     "estado": "UNKNOWN",
+     "minimo_ternas_previas": 6,
+     "motivo": "historia_insuficiente",
+     "referencia_bps": 166.8762,
+     "ternas_previas_no_solapadas": 4
+    },
+    "concentracion_10s": {
+     "bucket_dominante_iso": "2026-11-16T20:14:50+00:00",
+     "bucket_dominante_ms": 1794860090000,
+     "buckets": [
+      5195.712,
+      2280.6788,
+      -548.9516,
+      -6014.2332,
+      -116.1438,
+      30626.4395
+     ],
+     "concentracion": 0.9746,
+     "estado": "resoluble",
+     "motivo": null
+    },
+    "cut_iso": "2026-11-16T20:15:00.502000+00:00",
+    "cut_ms": 1794860100502,
+    "detalle_10s_primer_cambio": [
+     {
+      "as_of_iso": "2026-11-16T20:15:10.491000+00:00",
+      "as_of_ms": 1794860110491,
+      "buy_notional": 9281.2391,
+      "delta": -4328.2961,
+      "estado": "resoluble",
+      "fin_ms": 1794860110000,
+      "inicio_iso": "2026-11-16T20:15:00+00:00",
+      "inicio_ms": 1794860100000,
+      "motivo": null,
+      "precio_close": 0.21103,
+      "precio_open": 0.21091,
+      "sell_notional": 13609.5352
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:20.259000+00:00",
+      "as_of_ms": 1794860120259,
+      "buy_notional": 5622.0468,
+      "delta": -4466.5485,
+      "estado": "resoluble",
+      "fin_ms": 1794860120000,
+      "inicio_iso": "2026-11-16T20:15:10+00:00",
+      "inicio_ms": 1794860110000,
+      "motivo": null,
+      "precio_close": 0.21078,
+      "precio_open": 0.21111,
+      "sell_notional": 10088.5954
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:30.295000+00:00",
+      "as_of_ms": 1794860130295,
+      "buy_notional": 1567.9041,
+      "delta": 274.9989,
+      "estado": "resoluble",
+      "fin_ms": 1794860130000,
+      "inicio_iso": "2026-11-16T20:15:20+00:00",
+      "inicio_ms": 1794860120000,
+      "motivo": null,
+      "precio_close": 0.21059,
+      "precio_open": 0.2107,
+      "sell_notional": 1292.9052
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:41.005000+00:00",
+      "as_of_ms": 1794860141005,
+      "buy_notional": 5112.4661,
+      "delta": 225.1118,
+      "estado": "resoluble",
+      "fin_ms": 1794860140000,
+      "inicio_iso": "2026-11-16T20:15:30+00:00",
+      "inicio_ms": 1794860130000,
+      "motivo": null,
+      "precio_close": 0.2101,
+      "precio_open": 0.21066,
+      "sell_notional": 4887.3543
+     },
+     {
+      "as_of_iso": "2026-11-16T20:15:50.924000+00:00",
+      "as_of_ms": 1794860150924,
+      "buy_notional": 1173.0785,
+      "delta": 142.197,
+      "estado": "resoluble",
+      "fin_ms": 1794860150000,
+      "inicio_iso": "2026-11-16T20:15:40+00:00",
+      "inicio_ms": 1794860140000,
+      "motivo": null,
+      "precio_close": 0.20994,
+      "precio_open": 0.2101,
+      "sell_notional": 1030.8815
+     },
+     {
+      "as_of_iso": "2026-11-16T20:16:00.258000+00:00",
+      "as_of_ms": 1794860160258,
+      "buy_notional": 1897.2435,
+      "delta": 364.9124,
+      "estado": "resoluble",
+      "fin_ms": 1794860160000,
+      "inicio_iso": "2026-11-16T20:15:50+00:00",
+      "inicio_ms": 1794860150000,
+      "motivo": null,
+      "precio_close": 0.2101,
+      "precio_open": 0.21001,
+      "sell_notional": 1532.3311
+     }
+    ],
+    "direccion": "LONG",
+    "entrada_original_ms": 1794860160000,
+    "evidencia_en_tiempo": {
+     "bloques_totales": 6,
+     "bloques_utiles": 2,
+     "cambio_antes_de_entrada_original": false,
+     "cambio_antes_de_salida_original": true
+    },
+    "impacto": {
+     "avance_ultima_ventana_pct": 73.2998,
+     "delta_2_bps": 31.1751,
+     "delta_3_bps": 85.5845,
+     "estado": "resoluble",
+     "flujo_alineado_2": 3138.2724,
+     "flujo_alineado_3": 31423.5017,
+     "frenada_avance": false,
+     "frenada_impacto": true,
+     "impacto_2_bps_por_1k": 9.9338,
+     "impacto_3_bps_por_1k": 2.7236,
+     "impacto_relativo": 0.2742,
+     "motivo": null
+    },
+    "primer_cambio": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -39.8218,
+     "disponibilidad_iso": "2026-11-16T20:16:00.474000+00:00",
+     "disponibilidad_ms": 1794860160474,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:16:00+00:00",
+     "fin_ms": 1794860160000,
+     "flujo_alineado": -7787.6245,
+     "inicio_iso": "2026-11-16T20:15:00+00:00",
+     "inicio_ms": 1794860100000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.2101,
+     "profundidad_contraria": 2146.229,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_giro": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -39.8218,
+     "disponibilidad_iso": "2026-11-16T20:16:00.474000+00:00",
+     "disponibilidad_ms": 1794860160474,
+     "es_giro": true,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:16:00+00:00",
+     "fin_ms": 1794860160000,
+     "flujo_alineado": -7787.6245,
+     "inicio_iso": "2026-11-16T20:15:00+00:00",
+     "inicio_ms": 1794860100000,
+     "k": 0,
+     "motivo": null,
+     "precio_cierre": 0.2101,
+     "profundidad_contraria": 2146.229,
+     "tipo": "giro",
+     "tipos": [
+      "giro"
+     ]
+    },
+    "primer_precio_sin_avance": {
+     "bloques_no_usables_antes": [],
+     "delta_cierre_bps": -27.1299,
+     "disponibilidad_iso": "2026-11-16T20:17:00.612000+00:00",
+     "disponibilidad_ms": 1794860220612,
+     "es_giro": false,
+     "estado": "cambio_observado",
+     "fin_iso": "2026-11-16T20:17:00+00:00",
+     "fin_ms": 1794860220000,
+     "flujo_alineado": 1368.5767,
+     "inicio_iso": "2026-11-16T20:16:00+00:00",
+     "inicio_ms": 1794860160000,
+     "k": 1,
+     "motivo": null,
+     "precio_cierre": 0.20953,
+     "profundidad_contraria": 2494.2349,
+     "tipo": "precio_sin_avance",
+     "tipos": [
+      "debilitamiento",
+      "precio_sin_avance"
+     ]
+    },
+    "primer_profundidad_deja_de_caer": {
+     "bloques_totales": 6,
+     "bloques_utiles": 2,
+     "delta_cierre_bps": null,
+     "disponibilidad_iso": null,
+     "disponibilidad_ms": null,
+     "es_giro": false,
+     "estado": "sin_cambio",
+     "fin_iso": null,
+     "fin_ms": null,
+     "flujo_alineado": null,
+     "inicio_iso": null,
+     "inicio_ms": null,
+     "k": null,
+     "motivo": null,
+     "precio_cierre": null,
+     "profundidad_contraria": null,
+     "tipo": null,
+     "tipos": []
+    },
+    "q_descomposicion": {
+     "aporte_importe_pct": 93.7366,
+     "aporte_profundidad_pct": 6.2634,
+     "estado": "resoluble",
+     "flujo_alineado_1": 2001.2484,
+     "flujo_alineado_3": 31423.5017,
+     "importe_crece": true,
+     "motivo": null,
+     "notional_total_crece": true,
+     "profundidad_1": 3118.7238,
+     "profundidad_3": 2594.5607,
+     "profundidad_cae_pct": -16.807,
+     "q_1": 0.6417,
+     "q_3": 12.1113,
+     "q_crecimiento": 18.8741
+    },
+    "resultado_cambio": {
+     "adverso_bps": -153.25853425638525,
+     "continuacion_bps": -67.3192,
+     "cut_cambio_iso": "2026-11-16T20:16:00.474000+00:00",
+     "cut_cambio_ms": 1794860160474,
+     "demora_entrada_ms": 59526,
+     "entrada_ms": 1794860220000,
+     "estado": "resoluble",
+     "favorable_bps": 26.25925041776167,
+     "motivo": null,
+     "precio_entrada": 0.20945,
+     "precio_salida": 0.20804,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 67.3192,
+     "reversion_motivo": null,
+     "salida_ms": 1794860520000,
+     "trayectoria_completa": true
+    },
+    "resultado_giro": {
+     "adverso_bps": -153.25853425638525,
+     "continuacion_bps": -67.3192,
+     "cut_cambio_iso": "2026-11-16T20:16:00.474000+00:00",
+     "cut_cambio_ms": 1794860160474,
+     "demora_entrada_ms": 59526,
+     "entrada_ms": 1794860220000,
+     "estado": "resoluble",
+     "favorable_bps": 26.25925041776167,
+     "motivo": null,
+     "precio_entrada": 0.20945,
+     "precio_salida": 0.20804,
+     "reutiliza_entrada_original": false,
+     "reversion_bps": 67.3192,
+     "reversion_motivo": null,
+     "salida_ms": 1794860520000,
+     "trayectoria_completa": true
+    },
+    "retorno_original_bps": -156.5548,
+    "salida_original_ms": 1794860460000,
+    "symbol": "ARIAUSDT",
+    "terna": "ARIAUSDT|1794860040000",
+    "ultimos_30s": {
+     "as_of_max_ms": 1794860100490,
+     "buckets_faltantes": [],
+     "buckets_presentes": 3,
+     "delta_precio_30s_bps": 83.656,
+     "estado": "resoluble",
+     "flujo_alineado_30s": 24496.0625,
+     "giro_30s": false,
+     "motivo": null,
+     "presion_sin_avance_30s": false,
+     "ventana_ms": [
+      1794860070000,
+      1794860100000
+     ]
+    }
+   }
+  ],
+  "factores_no_evaluados_por_el_detector": [
+   "tamano del avance frente al comportamiento reciente del mismo token (normalizado por su propia historia)",
+   "descomposicion de Q: importe agresor frente a caida de la profundidad contraria",
+   "impacto marginal por tramo de presion y respuesta de los ultimos 30 s de la tercera ventana",
+   "distribucion intra-minuto del flujo (concentracion en un bucket de 10 s y giro dentro de la tercera ventana)",
+   "cualquier cambio posterior al corte (debilitamiento, giro, precio sin avance, profundidad que deja de caer)"
+  ],
+  "hechos": {
+   "extension": "se reporta por caso; UNKNOWN cuando la historia comparable es insuficiente",
+   "ganador": "STRKUSDT LONG",
+   "impacto": "la frenada del impacto aparece en 3 de 4 casos, incluido el ganador; no separa por si sola",
+   "perdedores": [
+    "ARIAUSDT LONG",
+    "BLESSUSDT SHORT (19:30)",
+    "BLESSUSDT SHORT (20:06)"
+   ],
+   "posterior": "el primer cambio se observa en el minuto del corte en los tres perdedores; en el ganador falta el flujo de los minutos siguientes",
+   "presion": "Q crece sobre todo por importe en los cuatro casos; la profundidad contraria cae poco"
+  },
+  "limitaciones": [
+   "cuatro casos: solo formulan hipotesis; no validan una regla",
+   "la captura ya se uso en el desarrollo del detector: no es una prueba independiente",
+   "los agregados de 1 minuto y de 10 s no se atribuyen a un segundo exacto",
+   "una caida o subida de la profundidad media no demuestra retirada o reposicion de ordenes individuales",
+   "el tramo sin flujo persistido no se rellena ni se atribuye a una causa"
+  ]
+ },
+ "limitaciones": [
+  "captura ya usada en el desarrollo del detector: hallazgo exploratorio, no prueba independiente",
+  "los cuatro casos formulan hipotesis; no validan una regla",
+  "los agregados de 1 minuto y de 10 s no se atribuyen a un segundo exacto",
+  "una caida o subida de la profundidad media no demuestra retirada o reposicion de ordenes individuales",
+  "entrada y salida son aperturas de velas: no son fills ni incluyen latencia",
+  "cobertura de velas limitada a los simbolos consultados durante la captura",
+  "flujo intermedio ausente en la captura no se rellena ni se atribuye a una causa",
+  "funding UNKNOWN; el coste de 16 bps es solo sensibilidad documentada",
+  "retorno bruto de referencia, no P&L"
+ ],
+ "origen": {
+  "cobertura": "docs\\evidence\\secuencia-presion-v1-correcciones-20261117\\C-cobertura-real.json",
+  "db": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\research.db",
+  "db_sha256_declarada_en_cobertura": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1",
+  "derivados_anclas": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a-anclas-comunes-v1",
+  "fuentes_intactas": true,
+  "hashes_antes": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "episodios_patron_originales.jsonl": "19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f",
+   "episodios_referencia_universo_igual.jsonl": "dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "hashes_despues": {
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "episodios_patron_originales.jsonl": "19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f",
+   "episodios_referencia_universo_igual.jsonl": "dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  },
+  "klines": "C:\\proyectos\\binance-futures-data\\exp-v2-ventana-4-20261116a\\consultas_klines.jsonl"
+ },
+ "pregunta": "que distinguia a STRKUSDT LONG de ARIAUSDT LONG y de los dos BLESSUSDT SHORT, y cuando se podia conocer cada factor",
+ "reglas_fijadas": {
+  "avance_vs_3m_flujo": "mediana de movimientos absolutos de bloques de 3 ventanas no solapadas del mismo simbolo, desde el final hacia atras, terminando en el inicio de la terna",
+  "avance_vs_ternas": "ternas previas no solapadas del universo acreditado; minimo 6",
+  "bloques_post": "minutos alineados al reloj desde el minuto del corte (b_0..b_5); el minuto es la unidad de evidencia",
+  "cambios": [
+   "giro",
+   "debilitamiento",
+   "precio_sin_avance",
+   "profundidad_deja_de_caer"
+  ],
+  "coste_sensibilidad_bps": 16.0,
+  "descomposicion_q": "dlogQ = log(F3/F1) - log(D3/D1); aportes porcentuales del importe y de la profundidad",
+  "entrada_cambio": "apertura del primer minuto estrictamente posterior a la disponibilidad del cambio",
+  "funding": "UNKNOWN",
+  "horizonte_ms": 300000,
+  "impacto": "bps por 1000 USDT alineados en cada tramo; frenada si impacto_3 < impacto_2 y F3 >= F2",
+  "minimo_bloques_3m": 6,
+  "minimo_pares_conclusion": 30,
+  "minimo_ternas_previas": 6,
+  "reversion_cambio": "solo si el cambio es un giro; misma entrada y salida que la continuacion; nunca la entrada original",
+  "salida_cambio": "apertura exactamente 5 minutos despues de la entrada",
+  "ultimos_30s": "3 buckets de 10 s que terminan en el cierre de la tercera ventana; giro_30s si el flujo alineado <= 0"
+ },
+ "run_id": "exp-v2-ventana-4-20261116a",
+ "universo": {
+  "agrupacion": {
+   "alertas_patron_asignadas": 4,
+   "alertas_tardias": 0,
+   "anclas_con_patron": 4,
+   "anclas_sin_patron": 139,
+   "repetidas_agrupadas": 68
+  },
+  "alertas_solo_precio": 211,
+  "anclas_con_patron": 4,
+  "anclas_sin_patron": 139,
+  "conservado": true,
+  "cortes_verificados_identicos": 501,
+  "episodios_ancla": 143,
+  "filas_crudas": {
+   "filas_flujo": 1265,
+   "filas_flujo_10s": 6633,
+   "filas_libro": 1197,
+   "flujo_10s_otro_run_id": 0,
+   "flujo_otro_run_id": 0,
+   "libro_otro_run_id": 0
+  },
+  "hasta_entrada_detector": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "publicado": {
+   "simbolos": 43,
+   "ternas": 501,
+   "ventanas": 1005
+  },
+  "ternas_evaluadas": 501,
+  "ventanas_validas_detector": 1005,
+  "verificacion_publicada": {
+   "anclas": {
+    "coinciden": 143
+   },
+   "casos": {
+    "coinciden": 4,
+    "detalle": [
+     {
+      "coincide": true,
+      "retorno_publicado_bps": -99.0371,
+      "retorno_recalculado_bps": -99.0371,
+      "terna": "BLESSUSDT|1794857340000"
+     },
+     {
+      "coincide": true,
+      "retorno_publicado_bps": 44.1176,
+      "retorno_recalculado_bps": 44.1176,
+      "terna": "STRKUSDT|1794858900000"
+     },
+     {
+      "coincide": true,
+      "retorno_publicado_bps": -142.0179,
+      "retorno_recalculado_bps": -142.0179,
+      "terna": "BLESSUSDT|1794859500000"
+     },
+     {
+      "coincide": true,
+      "retorno_publicado_bps": -156.5548,
+      "retorno_recalculado_bps": -156.5548,
+      "terna": "ARIAUSDT|1794860040000"
+     }
+    ]
+   }
+  }
+ },
+ "version_anclas": "anclas-comunes-ventana4-v1",
+ "version_diagnostico": "diagnostico-factores-v1"
+}

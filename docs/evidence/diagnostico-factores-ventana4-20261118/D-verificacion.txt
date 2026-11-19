@@ -1,0 +1,22 @@
+﻿# D. Verificacion independiente
+
+Script: scripts/verificar_factores_ventana4.py (version verificacion-factores-v1).
+No importa el modulo diagnosticado: recalcula desde SQL y velas persistidas.
+
+## Comando
+
+python scripts\verificar_factores_ventana4.py --db <research.db> --anclas <anclas-comunes> --derivados <diagnostico-factores> --klines <consultas_klines.jsonl> --resumen docs\evidence\diagnostico-factores-ventana4-20261118\C-resumen.json
+
+## Salida
+
+version=verificacion-factores-v1
+checks=737 fallos=0
+RESULTADO: OK
+EXIT=0
+
+## Cobertura de la verificacion
+
+- 4 ternas: flujo alineado, profundidad contraria y cierre de cada ventana; Q y su descomposicion; impacto 2 y 3 y relativo; ultimos 30 s; concentracion de 10 s; primer cambio (bloque, tipo, disponibilidad, motivo de descarte, entrada) y que la entrada del cambio no sea la original.
+- 143 anclas: estado y valores de la descomposicion de Q y del impacto relativo; recuentos de resolubles y no resolubles del resumen; giro y presion sin avance de los ultimos 30 s; que ninguna entrada de cambio reutilice la original.
+- Entrada, salida y retorno originales de los 4 casos desde las velas persistidas.
+- Que los 143 derivados de anclas correspondan a las 143 anclas publicadas y los 4 casos a los 4 episodios publicados.
