@@ -14,8 +14,9 @@ contrato **no** permite evitar entradas peores en esta muestra. La mediana neta
 de los episodios no extendidos supera a la de los extendidos por 2.53 bps, pero
 la media empeora 10.03 bps y el intervalo bootstrap de la diferencia de medias
 incluye cero. El filtro descartaria el 69.4 % de las senales, evitando
-8 594 bps de perdidas y renunciando a 7 088 bps de ganancias: neto **-1 506 bps**
-en 278 episodios.
+8 594 bps de perdidas y renunciando a 7 088 bps de ganancias. La **suma de los
+retornos descartados** es **-1 506 bps**; abstenerse de esas entradas **cambia
+la suma en +1 506 bps** en 278 episodios.
 
 El resultado no es un empate: es una ventaja de mediana que no sobrevive a la
 media, cambia de signo entre LONG y SHORT y solo aparece en 2 de 4 capturas.
@@ -110,10 +111,16 @@ regla de solo precio no es rentable en esta muestra, con o sin filtro.
 | episodios descartados | 193 de 278 (69.4 %) |
 | perdidas evitadas (suma de netos negativos descartados) | 8 594.42 bps en 116 episodios |
 | ganancias dejadas pasar (suma de netos positivos descartados) | 7 088.33 bps en 77 episodios |
-| **neto del filtro** | **-1 506.08 bps** |
+| **suma de los retornos descartados** | **-1 506.08 bps** |
+| **cambio de suma al abstenerse** | **+1 506.08 bps** |
+| suma sin filtro -> suma retenida | -3 022.24 -> -1 516.16 bps |
 
-El filtro conserva 85 episodios con media -17.84 bps y mediana -13.47 bps:
-mejora la mediana 2.53 bps y empeora la media 6.97 bps frente a no filtrar.
+Correccion de etiqueta (2026-11-19): el valor -1 506.08 bps descrito antes como
+"neto del filtro" es la suma de los retornos de los 193 episodios descartados,
+no el efecto de abstenerse. Al abstenerse, la suma aumenta +1 506.08 bps. Esto
+no es una mejora de expectativa por operacion: el filtro conserva 85 episodios
+con media -17.84 bps y mediana -13.47 bps: mejora la mediana 2.53 bps y empeora
+la media 6.97 bps frente a no filtrar. El veredicto **NO APORTA** no cambia.
 
 ### Por direccion
 

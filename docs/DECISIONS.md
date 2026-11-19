@@ -6579,3 +6579,13 @@ en `C:\proyectos\binance-futures-data\extension-previa-v1\` y
 **Publicado.** Commit selectivo de scripts, pruebas y evidencia; documentacion en
 commit posterior; push normal a origin/research/universe-liquidez-v1 con SHA
 remoto verificado.
+
+## 2026-11-19 - correccion de etiqueta del informe de extension previa y coste de ejecucion con capturas existentes
+
+Base publicada: `2be0e1fcc97ff58b1db0b6e59a8684c789debd07`, rama `research/universe-liquidez-v1`.
+
+Se corrige la etiqueta del informe `docs/evidence/extension-previa-20261119/README.md`: el valor -1 506.08 bps se habia etiquetado como "neto del filtro" y en realidad es la **suma de los retornos netos de los 193 episodios descartados**. Abstenerse de esas entradas **cambia la suma en +1 506.08 bps** (de -3 022.24 a -1 516.16 bps). No es una mejora de expectativa por operacion: la media retenida es -17.84 bps frente a -10.87 bps sin filtrar. El veredicto **NO APORTA** no cambia. Esta correccion se registra aqui porque `docs/DECISIONS.md` es append-only: la entrada anterior queda intacta.
+
+Se decide ademas, con autorizacion humana del 2026-11-19, verificar el coste de ejecucion usando solo las capturas existentes y los 278 episodios de solo precio ya publicados, sin reabrir el filtro de extension ni cambiar la estrategia. La decision metodologica queda congelada en `docs/evidence/coste-ejecucion-20261119/PREDECLARACION.md` y publicada en el commit `d727a6d52059a31c16b8a6c33422ac49aaabf0b1` antes de comparar retornos: C0 exige best bid y best ask observados en ambos extremos; no se aceptan medias de spread por minuto, mid, OHLC ni fills simulados; C1 fija +/-5 s y disponibilidad sin adelanto; C2 exige libro no cruzado ni degradado; C4 exige 30 pares. El spread se cobraria una sola vez; comision, slippage adicional y funding permanecen `UNKNOWN`. Si no hay cotizaciones, no se publica neto: solo el faltante exacto y el umbral bruto descriptivo de +5.13 bps de los 278 como maximo coste adicional antes de cero.
+
+Resultado: 0 de 278 pares con bid/ask; 2 episodios tienen mid+spread instantaneo en ambos extremos y no cumplen C0; el agregado de libro se publica ~60 s despues del instante. Veredicto `DATOS_INSUFICIENTES`; margen verificable `UNKNOWN`. No se activa filtro, no se cambia el bot y no se declara rentabilidad. Evidencia publicada en `docs/evidence/coste-ejecucion-20261119/` con verificacion independiente de 10 086 comprobaciones y 0 fallos.

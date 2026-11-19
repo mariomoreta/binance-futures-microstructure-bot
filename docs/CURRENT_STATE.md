@@ -1,5 +1,49 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-19 - coste de ejecucion con capturas existentes (sin mercado)
+
+**Autorizacion humana:** sobre la base publicada
+`2be0e1fcc97ff58b1db0b6e59a8684c789debd07`, rama `research/universe-liquidez-v1`,
+verificar el coste de ejecucion con las capturas existentes partiendo de los 278
+episodios de solo precio publicados. Contrato, direccion, entrada y salida a
+cinco minutos quedan congelados. No se reabre el filtro de extension ni se
+cambia la estrategia. Solo offline: sin Binance, capturas nuevas, ordenes ni
+cambios al bot. `opencode.json` y archivos ajenos intactos.
+
+**Predeclaracion:** `docs/evidence/coste-ejecucion-20261119/PREDECLARACION.md`,
+publicada en el commit `d727a6d52059a31c16b8a6c33422ac49aaabf0b1` antes de
+comparar retornos. Fija C0 (best bid y best ask explicitos; no valen media de
+spread por minuto, mid, OHLC ni fills simulados), C1 (+/-5 s y
+`received_ms <= instante`), C2 (no cruzado ni degradado y al menos un nivel por
+lado), C3 (ambos extremos) y C4 (minimo 30 pares). Coste: spread una sola vez;
+comision, slippage y funding `UNKNOWN`.
+
+**Hecho:** `scripts/coste_ejecucion_inventario.py`, `INVENTARIO.md` y
+`C-inventario.json` se publican en el primer commit. `research_book_1m` guarda
+agregados por minuto publicados ~60 s despues del instante;
+`observaciones.jsonl.libro` guarda mid y spread, no bid/ask. Barrido de 527
+archivos de texto: 0 campos de precio de nivel. Buckets entrada/salida/ambos
+277/273/272, 0 disponibles al instante; 2 de 278 con mid+spread a +/-5 s en
+ambos extremos; 0 con bid/ask; 0 pares C3.
+
+**Resultado:** 0 pares evaluables. Bruto descriptivo de los 278 +5.1286 bps;
+maximo coste adicional antes de cero 5.1286 bps. Spread agregado mediano
+4.64 bps sobre 550 buckets, solo contexto y no aplicado. Comision, slippage y
+funding `UNKNOWN`. No se publica neto ajustado ni se extrapola subconjunto
+alguno. Veredicto `DATOS_INSUFICIENTES`.
+
+**Correccion de etiqueta:** -1 506.08 bps es la suma de los retornos
+descartados; +1 506.08 bps es el cambio de suma al abstenerse de esas entradas
+(de -3 022.24 a -1 516.16). La media retenida empeora de -10.87 a -17.84 bps.
+El veredicto anterior `NO APORTA` no cambia. Se corrige la etiqueta en el
+informe anterior y en los documentos vigentes; `docs/DECISIONS.md` es
+append-only y se corrige con una entrada nueva.
+
+**Pruebas:** 17 nuevas; regresion focalizada 123 passed, exit 0; verificador
+independiente 10 086 comprobaciones, 0 fallos. Evidencia en
+`docs/evidence/coste-ejecucion-20261119/`; derivados fuera de Git en
+`C:\proyectos\binance-futures-data\coste-ejecucion-v1\`.
+
 ## Bloque 2026-11-19 — extension previa vs regla de solo precio (sin mercado)
 
 **Autorizacion humana (2026-11-19):** sobre la base publicada
@@ -34,7 +78,8 @@ salida). `EXTENDIDO` 193, `NORMAL` 85. Neto tras 16 bps: mediana -16.00 vs
 -13.47 y media -7.80 vs -17.84. Diferencia NORMAL-EXTENDIDO: mediana +2.53,
 media -10.03, IC bootstrap descriptivo [-57.04, +31.77]. El filtro descarta el
 69.4 % (193), evita 8 594.42 bps de perdidas y renuncia a 7 088.33 bps de
-ganancias: neto -1 506.08 bps. Sin filtro: media -10.87, mediana -16.00. LONG
+ganancias: la suma de los retornos descartados es -1 506.08 bps y el cambio de
+suma al abstenerse es +1 506.08 bps. Sin filtro: media -10.87, mediana -16.00. LONG
 135: EXT -20.02/-10.61 frente a NOR -32.04/-52.44 (la ventaja se invierte);
 SHORT 143: EXT -16.00/-5.30 frente a NOR +2.51/+19.30. A favor en 2 de 4
 capturas. Terciles sin dosis-respuesta: el mas extendido tiene la mejor media
