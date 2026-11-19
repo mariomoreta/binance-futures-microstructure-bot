@@ -44,8 +44,8 @@ Detalle completo en `INVENTARIO.md`.
 
 - `research_book_1m` guarda **agregados por minuto** del libro `depth20@100ms`:
   spread, imbalance, micro y cantidades por nivel. **No guarda precios de nivel.**
-  Se publica ~60 s despues del instante: ni el agregado del minuto de
-  entrada esta disponible **despues** de la entrada, y lo mismo en la salida.
+  Se publica ~60 s despues del instante: el agregado del minuto de entrada
+  **no existe en el instante de entrada**, y lo mismo ocurre en la salida.
   Usarlo seria adelanto de informacion.
 - `observaciones.jsonl.libro` guarda **mid y spread** en el instante de
   decision. No guarda best bid ni best ask.
