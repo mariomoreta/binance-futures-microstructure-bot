@@ -1,0 +1,4 @@
+capturas: {"exp-v2-ventana-1-20261112a": {"alertas": 0, "episodios": 0}, "exp-v2-ventana-2-20261112a": {"alertas": 477, "episodios": 231}, "exp-v2-ventana-3-20261115a": {"alertas": 462, "episodios": 229}, "public-pilot-1h-20261105a": {"alertas": 433, "episodios": 217}, "public-pilot-1h-20261106a": {"alertas": 448, "episodios": 237}}
+evaluables verificados: 278
+comprobaciones: 3687 | fallos: 0
+EXIT=0

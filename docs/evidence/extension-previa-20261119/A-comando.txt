@@ -1,0 +1,57 @@
+== 1. inventario (paso 1) ==
+inventariando exp-v2-ventana-1-20261112a ...
+inventariando exp-v2-ventana-2-20261112a ...
+inventariando exp-v2-ventana-3-20261115a ...
+inventariando public-pilot-1h-20261105a ...
+inventariando public-pilot-1h-20261106a ...
+exp-v2-ventana-1-20261112a: ternas=0 patron=0 completos=0 | solo_precio=0 completos=0
+exp-v2-ventana-2-20261112a: ternas=1091 patron=3 completos=0 | solo_precio=231 completos=78
+exp-v2-ventana-3-20261115a: ternas=1066 patron=5 completos=1 | solo_precio=229 completos=57
+public-pilot-1h-20261105a: ternas=1054 patron=2 completos=0 | solo_precio=217 completos=58
+public-pilot-1h-20261106a: ternas=1103 patron=7 completos=1 | solo_precio=237 completos=86
+resumen=C:\proyectos\binance-futures-data\extension-previa-v1-inventario\inventario.json
+EXIT=0
+
+== 2. evaluacion completa (paso 3) ==
+python scripts\extension_previa_v1.py --salida "C:\proyectos\binance-futures-data\extension-previa-v1\resumen.json"
+evaluando exp-v2-ventana-1-20261112a ...
+evaluando exp-v2-ventana-2-20261112a ...
+evaluando exp-v2-ventana-3-20261115a ...
+evaluando public-pilot-1h-20261105a ...
+evaluando public-pilot-1h-20261106a ...
+solo_precio: episodios=914 evaluables=278 EXT=193 NOR=85 veredicto=NO APORTA
+patron: episodios=17 evaluables=2 EXT=2 NOR=0 veredicto=DATOS INSUFICIENTES
+resumen=C:\proyectos\binance-futures-data\extension-previa-v1\resumen.json
+EXIT=0
+
+== 3. resumen compacto publicado ==
+python scripts\extension_previa_v1.py --salida docs\evidence\extension-previa-20261119\C-resumen.json --compacto
+evaluando exp-v2-ventana-1-20261112a ...
+evaluando exp-v2-ventana-2-20261112a ...
+evaluando exp-v2-ventana-3-20261115a ...
+evaluando public-pilot-1h-20261105a ...
+evaluando public-pilot-1h-20261106a ...
+solo_precio: episodios=914 evaluables=278 EXT=193 NOR=85 veredicto=NO APORTA
+patron: episodios=17 evaluables=2 EXT=2 NOR=0 veredicto=DATOS INSUFICIENTES
+resumen=docs\evidence\extension-previa-20261119\C-resumen.json
+EXIT=0
+
+== 4. verificacion independiente ==
+python scripts\verificar_extension_previa_v1.py "C:\proyectos\binance-futures-data\extension-previa-v1\resumen.json"
+capturas: {"exp-v2-ventana-1-20261112a": {"alertas": 0, "episodios": 0}, "exp-v2-ventana-2-20261112a": {"alertas": 477, "episodios": 231}, "exp-v2-ventana-3-20261115a": {"alertas": 462, "episodios": 229}, "public-pilot-1h-20261105a": {"alertas": 433, "episodios": 217}, "public-pilot-1h-20261106a": {"alertas": 448, "episodios": 237}}
+evaluables verificados: 278
+comprobaciones: 3687 | fallos: 0
+EXIT=0
+
+== 5. determinismo (dos corridas, mismo sha256) ==
+resumen.json sha256 = 2ddfec419c855d04aa0d4f74850b12c4ec7465b0c765143b50705c214c3f2472
+resumen-2.json sha256 = 2ddfec419c855d04aa0d4f74850b12c4ec7465b0c765143b50705c214c3f2472
+IDENTICOS=True
+EXIT=0
+
+== 6. pruebas enfocadas ==
+python -m pytest tests\test_extension_previa_v1.py tests\test_secuencia_presion_v1.py tests\test_replay_patron_ventana4.py tests\test_salida_temprana_ventana4.py tests\test_comparar_anclas_ventana4.py tests\test_diagnostico_factores_ventana4.py tests\test_analisis_contrafactual_ventana4.py -q
+........................................................................ [ 51%]
+....................................................................     [100%]
+140 passed in 14.72s
+EXIT=0
