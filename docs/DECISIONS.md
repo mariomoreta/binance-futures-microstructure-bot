@@ -6532,3 +6532,50 @@ publicado; fuentes intactas. Pruebas: 26 nuevas + 117 de regresión focalizada =
 **Publicado.** Commit selectivo `eba3d608ebed7870cb81ef18c15cfe21493f14e4`
 (scripts, pruebas y evidencia) y documentación posterior; push normal a
 origin/research/universe-liquidez-v1 con SHA remoto verificado.
+
+## 2026-11-19 - Extension previa como filtro de la senal de solo precio: NO APORTA
+
+**Contexto.** El diagnostico de factores de la ventana 4 dejo como unica
+hipotesis nueva direccionalmente consistente la extension del precio contra la
+historia propia, medida en 2 de 4 casos y sin separacion en las 143 anclas. Se
+prueba fuera de la ventana 4, con capturas distintas y sin cambiar el bot.
+
+**Decision previa a los datos.** Antes de calcular retornos se publico
+(`561d0b953cf665cab83047f90003bc37d1b28a99`) una unica definicion: avance de la
+senal (cierre del tercer minuto sobre cierre del primero) dividido por la mediana
+de 6 avances de bloques de 3 minutos contiguos y no solapados, inmediatamente
+anteriores, con cada minuto `data_quality = OK` y `as_of_ms <= corte`.
+`EXTENDIDO` si el cociente supera 1.0. Minimo 30 episodios por grupo. Cinco
+condiciones de conservacion: mediana y media de `NORMAL` mejores, y mediana
+robusta al contrato dominante, a 2 capturas y al episodio extremo. Cualquier
+fallo -> `NO APORTA`.
+
+**Datos.** 914 episodios de solo precio en 4 capturas (ventana 1 aporta 0 porque
+`research_flow_1m` esta vacia), 278 evaluables. `EXTENDIDO` 193, `NORMAL` 85.
+Mediana neta -16.00 vs -13.47 (diferencia +2.53); media -7.80 vs -17.84
+(diferencia -10.03); IC bootstrap descriptivo de la diferencia de medias
+[-57.04, +31.77]. El filtro descarta 69.4 % y su neto es -1 506.08 bps. LONG
+invierte la ventaja; SHORT la sostiene; 2 de 4 capturas a favor; terciles sin
+dosis-respuesta (el mas extendido tiene la mejor media).
+
+**Decision.** `NO APORTA`. Falla la condicion 2 (media) del criterio
+predeclarado y el resultado no es robusto por direccion ni por captura. No se
+activa el filtro, no se cambia el bot, no se declara edge y no se crea variante
+operativa. La mediana favorable (2.53 bps) se registra como observacion, no como
+evidencia de mejora. La familia del patron queda `DATOS INSUFICIENTES` (2 de 17)
+y no se usa para el veredicto.
+
+**Por que no se reabre.** El fallo no lo causa un contrato ni un episodio
+extremo: al quitar `JCTUSDT` y el peor caso la mediana se mantiene. El problema
+es estructural: la ventaja de mediana convive con una media peor y con signo
+opuesto en LONG. Repetir el analisis sobre las mismas capturas no cambia la
+decision.
+
+**Evidencia.** `docs/evidence/extension-previa-20261119/`; derivados fuera de Git
+en `C:\proyectos\binance-futures-data\extension-previa-v1\` y
+`...-inventario\`. Verificacion independiente 3 687/3 687; 20 pruebas nuevas +
+120 de regresion focalizada = 140 passed, exit 0; fuentes intactas.
+
+**Publicado.** Commit selectivo de scripts, pruebas y evidencia; documentacion en
+commit posterior; push normal a origin/research/universe-liquidez-v1 con SHA
+remoto verificado.

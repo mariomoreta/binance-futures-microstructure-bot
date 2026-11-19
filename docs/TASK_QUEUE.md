@@ -1,5 +1,40 @@
 # Cola vigente — detector secuencia-presion-v1 cerrado, 2026-11-16
 
+## Bloque 2026-11-19 — extension previa vs solo precio — TERMINADO
+
+`ACTIVE_TASK: ninguno` — esperar instruccion del usuario.
+
+**Base:** `91e16671ca6492316023f1c9a7ac6c06149333ee`, rama
+`research/universe-liquidez-v1`. Solo lectura de las capturas distintas de la
+ventana 4; sin Binance, capturas nuevas, ordenes, GARCH/PCA, cambios en
+detector/motor/dashboard ni variante nueva al cierre. `opencode.json` y archivos
+ajenos no se tocan. La prueba de salida temprana queda cerrada y no se reabre.
+
+**Hecho:** inventario primero (`scripts/extension_previa_inventario.py`) y
+predeclaracion publicada en `561d0b953cf665cab83047f90003bc37d1b28a99` antes de
+calcular retornos; despues `scripts/extension_previa_v1.py` con la definicion
+congelada y `scripts/verificar_extension_previa_v1.py` independiente.
+
+**Resultado verificable:** 914 episodios, 278 evaluables (EXT 193, NOR 85).
+Mediana neta -16.00 vs -13.47; media -7.80 vs -17.84; diferencia +2.53/-10.03;
+IC [-57.04, +31.77]. Filtro: 69.4 % descartado, 8 594.42 bps evitados, 7 088.33
+bps renunciados, neto -1 506.08. LONG invierte la ventaja; SHORT la sostiene; 2
+de 4 capturas a favor; terciles sin dosis-respuesta.
+
+**Conclusion formal:** `NO APORTA` (falla la condicion 2 del criterio
+predeclarado). No se activa el filtro. Patron: `DATOS INSUFICIENTES` (2 de 17).
+
+**Pruebas:** 20 nuevas passed; focalizada 140 passed, exit 0; verificador 3 687
+comprobaciones, 0 fallos.
+
+**Evidencias:** `docs/evidence/extension-previa-20261119/`; derivados fuera de
+Git en `C:\proyectos\binance-futures-data\extension-previa-v1\`.
+
+**Siguiente:** ninguna prueba automatica. Reabrir exige autorizacion humana,
+`run_id` nuevo con >= 30 episodios por grupo y >= 18 min contiguos por contrato
+en >= 2 dias, y modelo de coste real; republicar el criterio antes de mirar
+retornos.
+
 ## Bloque 2026-11-18 — salida temprana al primer cambio observable — TERMINADO
 
 `ACTIVE_TASK: ninguno` — esperar instruccion del usuario.

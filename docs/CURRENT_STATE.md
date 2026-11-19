@@ -1,5 +1,62 @@
 # Estado vigente — ventana 4 ejecutada COMPLETA con cierre normal (2026-11-16)
 
+## Bloque 2026-11-19 — extension previa vs regla de solo precio (sin mercado)
+
+**Autorizacion humana (2026-11-19):** sobre la base publicada
+`91e16671ca6492316023f1c9a7ac6c06149333ee`, medir en capturas distintas de la
+ventana 4 si medir cuanto se ha extendido el movimiento frente a la historia del
+propio contrato permite evitar entradas peores que una regla de solo precio. Solo
+lectura de los `research.db` de ventana 1, 2, 3 y pilotos 1105a/1106a; sin
+Binance, capturas nuevas, ordenes, GARCH/PCA, cambios en
+detector/motor/dashboard ni variante nueva al cierre. `opencode.json` y archivos
+ajenos no se tocan.
+
+**WORKFLOW publicado:** la seccion "Diseno y pruebas de investigacion
+cuantitativa" llego al remoto durante la sesion (commit `2659b94`, solo
+`docs/WORKFLOW.md`). Este bloque la cumple: decision y criterio fijados antes de
+mirar retornos, disponibilidad al corte, mismo corte/entrada/horizonte en ambos
+grupos, referencia historica sencilla del mismo contrato (sin GARCH ni PCA) y
+comparacion previa con la regla de solo precio.
+
+**Hecho:** `scripts/extension_previa_inventario.py` cuenta primero los casos (914
+episodios de solo precio, 279 con historia y precios; 17 del patron, 2 completos)
+sin calcular retornos. `PREDECLARACION.md` fija por escrito, en el commit
+`561d0b953cf665cab83047f90003bc37d1b28a99` y antes de cualquier retorno, la
+definicion unica (avance de la senal / mediana de 6 bloques previos de 3 min
+contiguos y no solapados, conocidos al corte), los grupos (`EXTENDIDO` si
+`> 1.0`), el minimo de 30 por grupo y cinco condiciones de conservacion.
+`scripts/extension_previa_v1.py` reutiliza detector, ventanas y agrupacion
+publicados sin tocar umbrales.
+
+**Resultado verificable:** 914 episodios -> 278 evaluables (537 sin 18 min
+contiguos, 1 con mediana previa nula, 31 sin vela de entrada, 67 sin vela de
+salida). `EXTENDIDO` 193, `NORMAL` 85. Neto tras 16 bps: mediana -16.00 vs
+-13.47 y media -7.80 vs -17.84. Diferencia NORMAL-EXTENDIDO: mediana +2.53,
+media -10.03, IC bootstrap descriptivo [-57.04, +31.77]. El filtro descarta el
+69.4 % (193), evita 8 594.42 bps de perdidas y renuncia a 7 088.33 bps de
+ganancias: neto -1 506.08 bps. Sin filtro: media -10.87, mediana -16.00. LONG
+135: EXT -20.02/-10.61 frente a NOR -32.04/-52.44 (la ventaja se invierte);
+SHORT 143: EXT -16.00/-5.30 frente a NOR +2.51/+19.30. A favor en 2 de 4
+capturas. Terciles sin dosis-respuesta: el mas extendido tiene la mejor media
+(-5.52). La mediana aguanta al quitar `JCTUSDT` (18 episodios) y el episodio
+extremo (`BTWUSDT` SHORT -893.24 bps), pero la condicion 2 (media) falla.
+
+**Conclusion:** `NO APORTA`. La ventaja de mediana no sobrevive a la media, se
+invierte en LONG y aparece en 2 de 4 capturas; ningun grupo es rentable tras
+16 bps. No se activa el filtro, no se cambia el bot y no se declara edge. La
+familia del patron queda `DATOS INSUFICIENTES` (2 evaluables de 17). Ventana 1
+aporta 0 casos porque `research_flow_1m` esta vacia; se reporta, no se omite.
+
+**Pruebas:** `tests/test_extension_previa_v1.py` 20 passed; regresion focalizada
+140 passed, exit 0. Verificador independiente: 3 687 comprobaciones, 0 fallos.
+Determinismo: dos corridas con el mismo sha256 `2ddfec41...c3f2472`.
+
+**Evidencias:** `docs/evidence/extension-previa-20261119/` (README, INVENTARIO,
+PREDECLARACION, A comando/exit 0, B pytest, C resumen JSON, D verificacion);
+derivados fuera de Git en
+`C:\proyectos\binance-futures-data\extension-previa-v1\` y
+`...-inventario\`. Fuentes intactas: hashes identicos antes y despues.
+
 ## Bloque 2026-11-18 — salida temprana al primer cambio observable (sin mercado)
 
 **Autorizacion humana (2026-11-18, continuacion):** sobre la base publicada
