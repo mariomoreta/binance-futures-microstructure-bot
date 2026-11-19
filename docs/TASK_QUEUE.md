@@ -28,20 +28,24 @@ cotizacion previa. Una fila `limite` (cinta agotada) se distingue de
 `SIN_COTIZACION`. Cuando el tope impide escribir incluso la fila `limite`, el
 piloto persiste instante y motivo en `resumen.json` (`cap_reached`,
 `cap_reason`, `cap_instante_ms`, `run_id`) y el replay devuelve `LIMITE_ALCANZADO`
-a partir de ese instante. `evaluar_episodio()` acepta el parametro
-`agotamiento` para aplicar el agotamiento a ambos extremos. El presupuesto de
-cobertura usa el tope que se agota primero (filas o bytes): con 4 MiB y 512 B/fila
-son 8 192 filas teoricas (~6 min 50 s con 20 simbolos a 1 s, antes de reservar
-marcas); tras reserva para marcas las filas efectivas son 8 151 (~6,79 min).
-La duracion se calcula multiplicando por el intervalo entre filas (una fila cada
-2 s cubre el doble que una cada 1 s). `--budget-only` distingue
-`gate.cabe_en_limites`, `minutos_cubiertos_por_tope` y
+a partir de ese instante. Cuando se sabe que se agoto pero no cuando, se declara
+`COBERTURA_UNKNOWN` (frescura no equivale a cobertura). `evaluar_episodio()`
+acepta el parametro `agotamiento` para aplicarlo a ambos extremos. Se agrega la
+entrada pública `replay_episodio_desde_corrida(run_dir, ...)` que lee
+`cotizaciones_investigacion.jsonl` y `resumen.json`, verifica mismo `run_id`,
+construye el agotamiento internamente y reutiliza `evaluar_episodio()`.
+El presupuesto de cobertura usa el tope que se agota primero (filas o bytes):
+con 4 MiB y 512 B/fila son 8 192 filas teoricas (~6 min 50 s con 20 simbolos a
+1 s, antes de reservar marcas); tras reserva para marcas las filas efectivas
+son 8 151 (~6,79 min). La duracion se calcula multiplicando por el intervalo
+entre filas (una fila cada 2 s cubre el doble que una cada 1 s). `--budget-only`
+distingue `gate.cabe_en_limites`, `minutos_cubiertos_por_tope` y
 `cubre_hasta_ultima_salida` (requiere
 `--quote-tape-ultima-entrada-ms-desde-inicio`; el fin del feed se deriva de
 `duration_seconds * 1000`); una aprobacion de presupuesto no acredita
 cobertura de cotizaciones. No se aumentan topes.
 
-**Verificacion:** 60 pruebas (40 puras + 20 de cadena), 111 passed con
+**Verificacion:** 64 pruebas (44 puras + 23 de cadena), 115 passed con
 regresiones (`test_operativo_capacidad_presupuesto`, `test_research_pilot`).
 Evidencia compacta en `docs/evidence/cotizaciones-local-20261119/`; generador
 reproducible `scripts/generar_evidencia_cotizaciones_local.py`.

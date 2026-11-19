@@ -621,10 +621,11 @@ class TestPresupuesto(Base):
         self.assertGreaterEqual(len(obs), 1)
 
     def test_replay_agotamiento_desde_resumen_json(self):
-        """Recorrido completo desde artefactos persistidos: el piloto agota
-        la cinta por bytes sin escribir marca limite en el JSONL. El replay
-        lee resumen.json y el JSONL, verifica mismo run_id, y aplica el
-        agotamiento a ambos extremos de evaluar_episodio."""
+        """Recorrido completo desde artefactos persistidos (replay publico):
+        el piloto agota la cinta por bytes sin escribir marca limite en el
+        JSONL. ``replay_episodio_desde_corrida`` lee resumen.json y el JSONL,
+        verifica mismo run_id, construye el agotamiento internamente y lo
+        aplica a ambos extremos de evaluar_episodio."""
         simbolo = UNIVERSE[0]
         run = self._start(
             quote_tape=True, quote_tape_max_rows=10_000,
@@ -641,7 +642,8 @@ class TestPresupuesto(Base):
             "bid_qty": "10.0", "ask_qty": "10.0",
         })
         run.step(entrada - 2_000, depth_symbols=(simbolo,), evaluate=False)
-        # Segundo intento dispara el agotamiento por bytes (cap_instante_ms = entrada - 1000).
+        # Segundo intento dispara el agotamiento por bytes (cap_instante_ms =
+        # entrada - 1000); no cabio la marca limite en el JSONL.
         run.ws.queue_depth(simbolo, {
             "event_ms": entrada, "bid": "100.1", "ask": "100.3",
             "bid_qty": "10.0", "ask_qty": "10.0",
@@ -657,33 +659,19 @@ class TestPresupuesto(Base):
         self.assertEqual(n_cot, 1)
         self.assertEqual(n_lim, 0)
 
-        # Leer el estado de la cinta desde resumen.json (artefacto
-        # persistido, fuera del JSONL).
-        resumen = json.loads(
-            (run.out_dir / "resumen.json").read_text(encoding="utf-8"))
-        cinta_estado = resumen["cotizaciones_investigacion"]
-        self.assertTrue(cinta_estado["cap_reached"])
-        self.assertIsNotNone(cinta_estado["cap_instante_ms"])
-        self.assertEqual(cinta_estado["run_id"], RUN_ID)
-
-        # Verificar que el run_id del JSONL coincide con el de resumen.json.
-        for f in filas:
-            if f.get("kind") == "cotizacion":
-                self.assertEqual(f.get("run_id"), RUN_ID)
-
-        # Aplicar el agotamiento a ambos extremos del episodio.
-        agotamiento = {
-            "instante_ms": cinta_estado["cap_instante_ms"],
-            "motivo": cinta_estado["cap_reason"],
-        }
-
-        # La entrada esta antes del corte: se conserva como valida.
-        ev = qt.evaluar_episodio(
-            simbolo, entrada - 2_000, salida, "LONG", qt.TAMANO_SIMULADO,
-            filas, run_id=RUN_ID, agotamiento=agotamiento)
+        # Replay publico desde el directorio de la corrida: NO se construye
+        # el argumento agotamiento a mano; replay_episodio_desde_corrida lo
+        # lee de resumen.json.
+        ev = qt.replay_episodio_desde_corrida(
+            run.out_dir, simbolo, entrada - 2_000, salida, "LONG",
+            qt.TAMANO_SIMULADO, run_id=RUN_ID)
         self.assertFalse(ev["evaluable"], ev)
+        # La entrada esta antes del corte: se conserva como valida.
         self.assertIsNotNone(ev["fila_entrada"])
         self.assertEqual(ev["motivo_entrada"], None)
+        self.assertEqual(ev["fila_entrada"]["event_ms"], entrada - 2_000)
+        # La salida esta despues del corte: rechazada con LIMITE_ALCANZADO
+        # aunque la ultima cita siga fresca.
         self.assertIsNone(ev["fila_salida"])
         self.assertEqual(ev["motivo_salida"], "LIMITE_ALCANZADO")
         self.assertTrue(ev["motivo"].startswith("SIN_COTIZACION_SALIDA:"),
@@ -692,6 +680,72 @@ class TestPresupuesto(Base):
         # El piloto siguio guardando observaciones normales tras el agotamiento.
         obs = trp.read_rows(run.obs_path)
         self.assertGreaterEqual(len(obs), 1)
+
+    def test_replay_episodio_valido_sin_agotamiento(self):
+        """Episodio valido sin agotamiento: replay publico es evaluable
+        normalmente (regresion del comportamiento previo)."""
+        simbolo = UNIVERSE[0]
+        run = self._start(quote_tape=True, quote_tape_max_rows=10_000)
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+        run.ws.queue_depth(simbolo, {
+            "event_ms": salida, "bid": "100.4", "ask": "100.6",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(salida, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+        filas = self._filas(run)
+
+        # No hubo agotamiento (cinta con espacio): agotamiento es None.
+        resumen = json.loads(
+            (run.out_dir / "resumen.json").read_text(encoding="utf-8"))
+        self.assertFalse(resumen["cotizaciones_investigacion"]["cap_reached"])
+
+        ev = qt.replay_episodio_desde_corrida(
+            run.out_dir, simbolo, entrada, salida, "LONG",
+            qt.TAMANO_SIMULADO, run_id=RUN_ID)
+        self.assertTrue(ev["evaluable"], ev)
+        self.assertEqual(ev["fila_entrada"]["event_ms"], entrada)
+        self.assertEqual(ev["fila_salida"]["event_ms"], salida)
+        self.assertIsNone(ev["motivo_entrada"])
+        self.assertIsNone(ev["motivo_salida"])
+
+    def test_replay_run_id_distinto_no_evaluable(self):
+        """run_id distinto al de la corrida: resultado explicito y no
+        evaluable, sin interpretar la ausencia como falta de agotamiento."""
+        simbolo = UNIVERSE[0]
+        run = self._start(
+            quote_tape=True, quote_tape_max_rows=10_000,
+            quote_tape_max_bytes=450,  # agota por bytes
+        )
+        run.wait_ready(expected_followed=5)
+        decision = T0 + MINUTE
+        entrada = decision + MINUTE
+        salida = entrada + 5 * MINUTE
+
+        run.ws.queue_depth(simbolo, {
+            "event_ms": entrada, "bid": "100.0", "ask": "100.2",
+            "bid_qty": "10.0", "ask_qty": "10.0",
+        })
+        run.step(entrada, depth_symbols=(simbolo,), evaluate=False)
+
+        self._finish(run)
+
+        # Solicitar un run_id que no coincide con el de la cinta/resumen.
+        ev = qt.replay_episodio_desde_corrida(
+            run.out_dir, simbolo, entrada, salida, "LONG",
+            qt.TAMANO_SIMULADO, run_id="run-otro-distinto")
+        self.assertFalse(ev["evaluable"])
+        self.assertEqual(ev["motivo"], "RUN_ID_DISTINTO")
 
     def test_budget_only_cubre_hasta_ultima_salida_positivo(self):
         """--budget-only: plan que cubre hasta la ultima salida."""

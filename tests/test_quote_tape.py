@@ -445,6 +445,62 @@ class TestSeleccion(unittest.TestCase):
         self.assertEqual(ev["precio_entrada"], 100.2)
         self.assertEqual(ev["precio_salida"], 100.4)
 
+    def _escribir_corrida(self, tmp: Path, filas, cinta: dict) -> Path:
+        """Escribe resumen.json y cotizaciones_investigacion.jsonl en tmp."""
+        (tmp / "resumen.json").write_text(
+            json.dumps({"cotizaciones_investigacion": cinta},
+                       ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8")
+        (tmp / qt.NOMBRE_ARCHIVO).write_text(
+            "".join(json.dumps(r, sort_keys=True) + "\n" for r in filas),
+            encoding="utf-8")
+        return tmp
+
+    def test_replay_desde_corrida_agotamiento_sin_hora_unknown(self):
+        """Agotamiento sin instante verificable (cap_instante_ms ausente):
+        replay devuelve COBERTURA_UNKNOWN aunque la cita siga fresca."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            self._escribir_corrida(tmp, filas, {
+                "run_id": "a", "cap_reached": True,
+                "cap_instante_ms": None, "cap_reason": "limite_bytes",
+            })
+            ev = qt.replay_episodio_desde_corrida(
+                tmp, "AAAUSDT", 999_000, 999_500, "LONG",
+                qt.TAMANO_SIMULADO, run_id="a")
+        self.assertFalse(ev["evaluable"])
+        self.assertEqual(ev["motivo_entrada"], "COBERTURA_UNKNOWN")
+        self.assertEqual(ev["motivo_salida"], "COBERTURA_UNKNOWN")
+        self.assertTrue(ev["motivo"].startswith("SIN_COTIZACION_ENTRADA:"),
+                        ev)
+
+    def test_replay_desde_corrida_resumen_ausente_no_evaluable(self):
+        """Resumen ausente: resultado explicito y no evaluable, sin asumir
+        que la cinta nunca se agoto."""
+        filas = [
+            {"kind": "cotizacion", "run_id": "a", "symbol": "AAAUSDT",
+             "received_ms": 999_000, "event_ms": 999_000, "seq": 1,
+             "best_bid": 100.0, "best_ask": 100.2, "bid_qty": 10.0,
+             "ask_qty": 10.0, "mid": 100.1, "valida": True},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            # Solo el JSONL, sin resumen.json.
+            (tmp / qt.NOMBRE_ARCHIVO).write_text(
+                "".join(json.dumps(r, sort_keys=True) + "\n" for r in filas),
+                encoding="utf-8")
+            ev = qt.replay_episodio_desde_corrida(
+                tmp, "AAAUSDT", 999_000, 999_500, "LONG",
+                qt.TAMANO_SIMULADO, run_id="a")
+        self.assertFalse(ev["evaluable"])
+        self.assertEqual(ev["motivo"], "RESUMEN_AUSENTE")
+
 
 class TestEvaluacion(unittest.TestCase):
     def setUp(self):

@@ -6674,3 +6674,41 @@ No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de
 estrategia, selector, horizonte o dashboard. El bloque termina con aceptacion
 local documentada.
 
+
+## 2026-11-19 - replay de cotizaciones desde archivos de la corrida y COBERTURA_UNKNOWN
+
+Base publicada: `87a1e8217cf0f6de363bd8b0234809378bc2efc2`, rama `fix/quote-tape-validity-coverage`.
+
+Se arregla el defecto de replay en `seleccionar` de `scripts/quote_tape.py`:
+cuando consta agotamiento de la cinta pero falta `cap_instante_ms` (no se sabe
+cuando se agoto), una cita valida y fresca ya no se acepta automaticamente.
+El orden de resolucion es ahora: (1) agotamiento con instante conocido y
+consulta >= corte -> `LIMITE_ALCANZADO`; (2) motivo concreto de libro invalido;
+(3) agotamiento sin instante -> `COBERTURA_UNKNOWN` (la frescura no equivale a
+cobertura); (4) cita valida solo cuando no hay incertidumbre de agotamiento.
+Esto evita aceptar una salida cuya cita sigue fresca pero cuya cobertura no se
+puede acreditar.
+
+Se agrega la entrada pública de replay `replay_episodio_desde_corrida` en
+`scripts/quote_tape.py`: recibe el directorio de la corrida y los datos del
+episodio, lee `cotizaciones_investigacion.jsonl` y `resumen.json`, comprueba
+que pertenecen al mismo `run_id`, construye internamente el agotamiento (el
+llamador no lo pasa) y reutiliza `evaluar_episodio()`. Casos: corte conocido
+conserva la entrada anterior al corte y rechaza la salida desde el corte con
+`LIMITE_ALCANZADO` aunque la ultima cita siga fresca y no haya cabido la marca
+limite en el JSONL; agotamiento sin instante verificable devuelve
+`COBERTURA_UNKNOWN`; run_id distinto o resumen ausente/invalido devuelve un
+resultado explicito y no evaluable sin interpretar la ausencia como prueba de
+que la cinta nunca se agoto.
+
+Se agregan pruebas: `tests/test_quote_tape.py` de 40 a 44 pruebas
+(replay desde archivos: agotamiento sin hora y resumen ausente);
+`tests/test_cotizaciones_local_piloto.py` de 22 a 23 pruebas (replay publico:
+entrada conservada/salida rechazada, episodio valido sin agotamiento,
+run_id distinto no evaluable). `64 passed` en conjunto, 115 passed con
+regresiones (`test_operativo_capacidad_presupuesto`, `test_research_pilot`).
+
+No hay Binance, nuevas capturas, ordenes, aumentos de cupo ni cambios de
+estrategia, selector, horizonte o dashboard. El bloque termina con el replay
+local verificado.
+

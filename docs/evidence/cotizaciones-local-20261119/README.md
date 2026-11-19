@@ -58,6 +58,20 @@ una invalidez. Nunca se usa una fila recibida despues del instante.
 `evaluar_episodio(...)` compara los dos extremos. Nada se lee del estado en
 memoria ni del frontend. No se desplaza entrada ni salida para buscar precio.
 
+**Frescura no equivale a cobertura.** Si consta que la cinta se agoto pero no
+se sabe cuando (`cap_instante_ms` ausente), el lector declara
+`COBERTURA_UNKNOWN` para el tramo afectado aunque la ultima cita siga fresca:
+no se puede acreditar que la cita prediga al agotamiento.
+
+`quote_tape.replay_episodio_desde_corrida(run_dir, symbol, entrada_ms,
+salida_ms, lado, size, run_id=...)` es la entrada pública de replay: lee
+`cotizaciones_investigacion.jsonl` y `resumen.json` del directorio de la
+corrida, comprueba que pertenecen al mismo `run_id`, construye internamente la
+evidencia de agotamiento (el llamador no la pasa) y reutiliza
+`evaluar_episodio()`. Conserva la entrada acreditada anterior al corte; desde
+el corte inclusive devuelve `LIMITE_ALCANZADO` aunque la ultima cita siga
+fresca y no haya cabido la marca final en el JSONL.
+
 En el recorrido de prueba `PilotRun.step` publica `E = T` con el reloj controlado
 en `T - 1 000 ms`; por diseno de la sincronizacion determinista del harness.
 La regla de no futuro se aplica al instante de decision (`received_ms <= T`),
@@ -113,6 +127,9 @@ sin libro valido posterior -> salida no evaluable con motivo `SALTO_SECUENCIA`.
 Invalidez posterior al instante de entrada: no altera la cotizacion valida en
 entrada (la fila invalida es posterior a T y no se usa). Cinta agotada antes de
 la salida: `LIMITE_ALCANZADO`, distinguible de `SIN_COTIZACION`.
+Cinta agotada pero sin instante verificable (`cap_instante_ms` ausente):
+`COBERTURA_UNKNOWN` para el tramo cuya cobertura no se pueda acreditar; la
+frescura de una cita no equivale a cobertura.
 
 ## 4. Topes, bytes y proyeccion
 
@@ -166,7 +183,8 @@ tope de bytes.
 
 ## 5. Codigos y pruebas
 
-- `scripts/quote_tape.py`: escritor/lector/evaluador. El lector `seleccionar`
+- `scripts/quote_tape.py`: escritor/lector/evaluador y entrada pública de
+  replay `replay_episodio_desde_corrida`. El lector `seleccionar`
   mantiene un automa de cobertura: una cotizacion valida establece cobertura,
   una invalidez (rotacion, salto de secuencia, perdida de calidad o fila
   `faltante`) la rompe, y solo una cotizacion valida posterior la restablece.
@@ -178,25 +196,29 @@ tope de bytes.
   `event_ms` solo se usa para disponibilidad y frescura, nunca para ordenar
   retroactivamente. Cuando el tope de bytes o filas impide escribir incluso
   la fila `limite`, el piloto persiste el instante y motivo de agotamiento
-  en `resumen.json` (`cap_reached`, `cap_reason`, `cap_instante_ms`); el
-  replay lee ese artefacto y, a partir de `cap_instante_ms`, devuelve
-  `LIMITE_ALCANZADO` aunque el JSONL no tenga fila `limite`.
+  en `resumen.json` (`cap_reached`, `cap_reason`, `cap_instante_ms`);
+  el replay lee ese artefacto y, a partir de `cap_instante_ms`, devuelve
+  `LIMITE_ALCANZADO` aunque el JSONL no tenga fila `limite`. Si se sabe que
+  se agoto pero no cuando, declara `COBERTURA_UNKNOWN` (frescura no equivale
+  a cobertura).
 - `scripts/research_pilot.py`: flag, archivo, presupuesto, enganche de lectura
   y de rotacion, estado en `estado.json` y `resumen.json`.
-- `tests/test_quote_tape.py`: 40 pruebas puras (cadencia, esquema, calidad,
+- `tests/test_quote_tape.py`: 44 pruebas puras (cadencia, esquema, calidad,
   seleccion, limites, descomposicion, maquina de cobertura, orden de estados
   en el mismo milisegundo, agotamiento sin marca, cinta agotada distinguible
-  de sin cotizacion, evaluar_episodio con agotamiento).
-- `tests/test_cotizaciones_local_piloto.py`: 22 pruebas de cadena completa
+  de sin cotizacion, evaluar_episodio con agotamiento, replay desde archivos
+  de corrida: agotamiento sin hora y resumen ausente).
+- `tests/test_cotizaciones_local_piloto.py`: 23 pruebas de cadena completa
   (trazas LONG/SHORT, exclusiones, rotacion, limite, desactivado,
   presupuesto con/sin red, recuperacion de cobertura despues de invalidez,
   invalidez sin recuperacion, invalidez posterior a entrada, cinta agotada
   antes de salida, agotamiento por bytes sin marca en JSONL, cadencia 2 s,
-  cobertura hasta ultima salida, replay desde resumen.json, CLI presupuesto
-  positivo/negativo/unidades incompatibles).
+  cobertura hasta ultima salida, replay publico desde archivos de corrida:
+  entrada conservada/salida rechazada, episodio valido sin agotamiento,
+  run_id distinto no evaluable).
 - `scripts/generar_evidencia_cotizaciones_local.py`: regenera
   `C-evidencia.json` con el mismo recorrido deterministico.
-- Verificacion: `60 passed` en los dos archivos de prueba del registro.
+- Verificacion: `64 passed` en los dos archivos de prueba del registro.
 - Comandos: `python -m pytest tests\test_quote_tape.py tests\test_cotizaciones_local_piloto.py -q`
   y `python scripts\generar_evidencia_cotizaciones_local.py`.
 

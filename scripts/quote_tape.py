@@ -395,14 +395,33 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
         ag_motivo = str(agotamiento.get("motivo") or "LIMITE_ALCANZADO")
 
     if ag_instante is not None and instante >= ag_instante:
-        # La cinta ya se agoto antes o en este instante.
+        # La cinta ya se agoto antes o en este instante (instante conocido).
         return {"cotizacion": None, "motivo": "LIMITE_ALCANZADO",
                 "candidatas": 0,
                 "rechazadas_posteriores": futuras,
                 "rechazadas_viejas": rech_viejas,
                 "agotamiento": ag_motivo}
 
+    if motivo_actual is not None:
+        # Razones concretas de libro invalido en el ultimo estado conocido.
+        return {"cotizacion": None, "motivo": motivo_actual,
+                "candidatas": 0,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas}
+
+    if agotamiento is not None and ag_instante is None:
+        # Sabemos que la cinta se agoto pero no cuando: la frescura de una
+        # cita no equivale a cobertura, no se puede acreditar que la cita
+        # valida prediga al agotamiento. Declaramos UNKNOWN para el tramo.
+        return {"cotizacion": None, "motivo": "COBERTURA_UNKNOWN",
+                "candidatas": 0,
+                "rechazadas_posteriores": futuras,
+                "rechazadas_viejas": rech_viejas,
+                "agotamiento": ag_motivo}
+
     if cotizacion_actual is not None:
+        # Solo se usa una cita valida cuando no hay incertidumbre de
+        # agotamiento (o cuando se sabe que predice al corte conocido).
         ev = int(cotizacion_actual["event_ms"])
         recv = int(cotizacion_actual["received_ms"])
         if ev > instante or recv > instante:
@@ -419,21 +438,6 @@ def seleccionar(symbol: str, instante_ms: int, filas: Iterable[Dict[str, Any]],
                 "candidatas": 1,
                 "rechazadas_posteriores": futuras,
                 "rechazadas_viejas": rech_viejas}
-
-    if motivo_actual is not None:
-        return {"cotizacion": None, "motivo": motivo_actual,
-                "candidatas": 0,
-                "rechazadas_posteriores": futuras,
-                "rechazadas_viejas": rech_viejas}
-
-    # Sabemos que se agoto pero no cuando, y no hay cobertura valida para
-    # el instante consultado: declaramos UNKNOWN para el tramo afectado.
-    if agotamiento is not None and ag_instante is None:
-        return {"cotizacion": None, "motivo": "COBERTURA_UNKNOWN",
-                "candidatas": 0,
-                "rechazadas_posteriores": futuras,
-                "rechazadas_viejas": rech_viejas,
-                "agotamiento": ag_motivo}
 
     if futuras:
         return {"cotizacion": None, "motivo": "COTIZACION_FUTURA",
@@ -537,3 +541,164 @@ def evaluar_episodio(
             float(precio_ref_salida) / float(precio_ref_entrada) - 1.0
         ) * 10_000.0
     return resultado
+
+
+def _resultado_no_evaluable(
+    symbol: str, entrada_ms: int, salida_ms: int, lado: str,
+    size: float, motivo: str, *,
+    max_edad_ms: int = MAX_EDAD_MS,
+    detalle: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Resultado base no evaluable (misma forma que ``evaluar_episodio``)."""
+    size_f = float(size)
+    return {
+        "version": VERSION,
+        "symbol": str(symbol).upper(),
+        "lado": str(lado).upper(),
+        "entrada_ms": int(entrada_ms),
+        "salida_ms": int(salida_ms),
+        "size": size_f,
+        "max_edad_ms": int(max_edad_ms),
+        "fila_entrada": None,
+        "fila_salida": None,
+        "motivo_entrada": motivo,
+        "motivo_salida": None,
+        "evaluable": False,
+        "motivo": motivo,
+        "precio_entrada": None,
+        "precio_salida": None,
+        "cantidad_entrada": None,
+        "cantidad_salida": None,
+        "retorno_referencia_precio_bps": None,
+        "retorno_referencia_mid_bps": None,
+        "retorno_cruce_bps": None,
+        "coste_spread_bps": None,
+        "comision_bps": "UNKNOWN",
+        "slippage_adicional_bps": "UNKNOWN",
+        "funding_bps": "UNKNOWN",
+        "retorno_neto_bps": "UNKNOWN",
+        "precios_son_fills": False,
+        "detalle_replay": detalle or {},
+    }
+
+
+def replay_episodio_desde_corrida(
+    run_dir: Path,
+    symbol: str,
+    entrada_ms: int,
+    salida_ms: int,
+    lado: str,
+    size: float,
+    *,
+    run_id: Optional[str] = None,
+    max_edad_ms: int = MAX_EDAD_MS,
+    precio_ref_entrada: Optional[float] = None,
+    precio_ref_salida: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Replay de un episodio desde los archivos de una corrida de piloto.
+
+    Lee ``cotizaciones_investigacion.jsonl`` y ``resumen.json`` de
+    ``run_dir``, comprueba que pertenecen al mismo ``run_id`` y construye
+    internamente la evidencia de agotamiento (el llamador no la pasa).
+    Reutiliza ``evaluar_episodio()``.
+
+    Casos:
+      - Corte conocido (``cap_instante_ms`` en resumen): conserva la entrada
+        acreditada anterior al corte; desde el corte inclusive devuelve
+        ``LIMITE_ALCANZADO`` aunque la ultima cita siga fresca y no haya
+        cabido la marca final en el JSONL.
+      - Agotamiento sin instante verificable: devuelve
+        ``COBERTURA_UNKNOWN`` en el tramo cuya cobertura no se pueda
+        acreditar. La frescura no equivale a cobertura.
+      - run_id distinto, resumen ausente o invalido: devuelve un resultado
+        explicito y no evaluable. Nunca se interpreta la ausencia de datos
+        como prueba de que la cinta nunca se agoto.
+    """
+    run_dir = Path(run_dir)
+    resumen_path = run_dir / "resumen.json"
+    tape_path = run_dir / NOMBRE_ARCHIVO
+
+    # --- Leer resumen.json (evidencia de agotamiento fuera del JSONL) -----
+    resumen = None
+    if resumen_path.exists():
+        try:
+            resumen = json.loads(resumen_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            resumen = None
+    if resumen is None:
+        # Resumen ausente o invalido: no se puede construir agotamiento, no
+        # se interpreta la ausencia como prueba de que la cinta nunca agoto.
+        return _resultado_no_evaluable(
+            symbol, entrada_ms, salida_ms, lado, size,
+            "RESUMEN_AUSENTE",
+            max_edad_ms=max_edad_ms,
+            detalle={"archivo": str(resumen_path),
+                     "razon": "resumen_json_ausente_o_invalido"})
+
+    cinta = resumen.get("cotizaciones_investigacion")
+    if not isinstance(cinta, dict):
+        return _resultado_no_evaluable(
+            symbol, entrada_ms, salida_ms, lado, size,
+            "RESUMEN_INVALIDO",
+            max_edad_ms=max_edad_ms,
+            detalle={"razon": "cotizaciones_investigacion_ausente_o_no_es_dict"})
+
+    # --- run_id: consistencia entre resumen y JSONL ----------------------
+    cinta_run_id = cinta.get("run_id")
+
+    filas: List[Dict[str, Any]] = []
+    jsonl_run_ids: List[str] = []
+    if tape_path.exists():
+        try:
+            filas = leer_tape(tape_path)
+        except (OSError, ValueError):
+            filas = []
+        for f in filas:
+            rid = f.get("run_id")
+            if rid is not None:
+                jsonl_run_ids.append(rid)
+
+    if cinta_run_id is not None:
+        jsonl_run_ids.append(cinta_run_id)
+
+    # run_id efectivo para la consulta.
+    efectivo_run_id: Optional[str] = None
+    if run_id is not None:
+        efectivo_run_id = run_id
+    elif cinta_run_id is not None:
+        efectivo_run_id = cinta_run_id
+
+    # Comprobar que JSONL y resumen pertenecen al mismo run_id y que no hay
+    # run_ids ajenos mezclados en el JSONL cuando se solicita uno concreto.
+    if efectivo_run_id is not None:
+        ajenos = {r for r in jsonl_run_ids if r != efectivo_run_id}
+        if ajenos:
+            return _resultado_no_evaluable(
+                symbol, entrada_ms, salida_ms, lado, size,
+                "RUN_ID_DISTINTO",
+                max_edad_ms=max_edad_ms,
+                detalle={"run_id_solicitado": efectivo_run_id,
+                         "run_ids_ajenos_en_jsonl": sorted(ajenos)})
+
+    # --- Construir agotamiento a partir del resumen (el llamador no lo pasa
+    #     a evaluar_episodio) --------------------------------------------
+    agotamiento: Optional[Dict[str, Any]] = None
+    cap_reached = bool(cinta.get("cap_reached"))
+    if cap_reached:
+        cap_instante_ms = cinta.get("cap_instante_ms")
+        try:
+            cap_instante_ms = (int(cap_instante_ms)
+                               if cap_instante_ms is not None else None)
+        except (TypeError, ValueError):
+            cap_instante_ms = None
+        cap_reason = cinta.get("cap_reason") or "LIMITE_ALCANZADO"
+        agotamiento = {"instante_ms": cap_instante_ms,
+                       "motivo": str(cap_reason)}
+
+    return evaluar_episodio(
+        symbol, entrada_ms, salida_ms, lado, size, filas,
+        run_id=efectivo_run_id, max_edad_ms=max_edad_ms,
+        precio_ref_entrada=precio_ref_entrada,
+        precio_ref_salida=precio_ref_salida,
+        agotamiento=agotamiento,
+    )
