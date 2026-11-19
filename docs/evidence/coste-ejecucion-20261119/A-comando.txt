@@ -1,0 +1,37 @@
+Comando: inventario de cotizaciones (offline, solo lectura)
+Base: 2be0e1fcc97ff58b1db0b6e59a8684c789debd07
+Fecha: 2026-11-19
+
+1) Salida completa (fuera de Git)
+python scripts\coste_ejecucion_inventario.py --salida C:\proyectos\binance-futures-data\coste-ejecucion-v1\inventario.json
+
+episodios: 278
+bucket entrada/salida/ambos: 277/273/272
+bucket disponible al instante: entrada 0 salida 0
+obs a +/-5 s: entrada 2 salida 2 ambos 2 (calidad ok 2)
+pares C0: 0 | pares C3: 0 | minimo: 30
+etiqueta: suma descartados -1506.0839 bps | cambio de suma al abstenerse +1506.0839 bps
+veredicto: DATOS_INSUFICIENTES
+EXIT=0
+
+sha256 (dos ejecuciones identicas):
+6946d10bd313f2379ab6b120273ac5f45b91dbe5020ffe0cbfd1e5626e7a7a8c
+
+2) Copia compacta publicada
+python scripts\coste_ejecucion_inventario.py --compacto --salida docs\evidence\coste-ejecucion-20261119\C-inventario.json
+
+episodios: 278
+bucket entrada/salida/ambos: 277/273/272
+bucket disponible al instante: entrada 0 salida 0
+obs a +/-5 s: entrada 2 salida 2 ambos 2 (calidad ok 2)
+pares C0: 0 | pares C3: 0 | minimo: 30
+etiqueta: suma descartados -1506.0839 bps | cambio de suma al abstenerse +1506.0839 bps
+veredicto: DATOS_INSUFICIENTES
+EXIT=0
+
+sha256 C-inventario.json:
+85cf9fd3e941a0dadc1164c4b538e001ef56a4bfb827b3c050d34b2224d65385
+
+3) Barrido de campos bid/ask
+527 archivos de texto (< 40 MB) de las 5 capturas y de la raiz de datos:
+0 coincidencias de bidPrice, askPrice, best_bid, best_ask, bestBid, bestAsk.
