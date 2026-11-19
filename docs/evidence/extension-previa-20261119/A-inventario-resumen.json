@@ -1,0 +1,410 @@
+{
+ "bloques_previos_exigidos": 6,
+ "capturas": [
+  {
+   "fuente_precios": "research_flow_1m.price_open/price_close (captura sin consultas_klines.jsonl)",
+   "klines_contraste": null,
+   "patron": {
+    "alertas_brutas": 0,
+    "completos": 0,
+    "con_historia_previa_6_bloques": 0,
+    "con_precios_entrada_salida": 0,
+    "episodios": 0,
+    "faltantes": {},
+    "por_bloques_previos": {},
+    "por_simbolo_completos": {}
+   },
+   "run_id": "exp-v2-ventana-1-20261112a",
+   "solo_precio": {
+    "alertas_brutas": 0,
+    "completos": 0,
+    "con_historia_previa_6_bloques": 0,
+    "con_precios_entrada_salida": 0,
+    "episodios": 0,
+    "faltantes": {},
+    "por_bloques_previos": {},
+    "por_simbolo_completos": {}
+   },
+   "ternas_contiguas": 0,
+   "ventanas": {
+    "data_quality": {},
+    "filas_flujo": 0,
+    "filas_libro": 1200,
+    "flujo_sin_libro": 0,
+    "simbolos": 0,
+    "ventanas": 0,
+    "ventanas_validas": 0
+   }
+  },
+  {
+   "fuente_precios": "research_flow_1m.price_open/price_close (captura sin consultas_klines.jsonl)",
+   "klines_contraste": null,
+   "patron": {
+    "alertas_brutas": 3,
+    "completos": 0,
+    "con_historia_previa_6_bloques": 0,
+    "con_precios_entrada_salida": 2,
+    "episodios": 3,
+    "faltantes": {
+     "historia_previa_insuficiente": 3,
+     "vela_entrada_ausente": 1
+    },
+    "por_bloques_previos": {
+     "0": 2,
+     "2": 1
+    },
+    "por_simbolo_completos": {}
+   },
+   "run_id": "exp-v2-ventana-2-20261112a",
+   "solo_precio": {
+    "alertas_brutas": 477,
+    "completos": 78,
+    "con_historia_previa_6_bloques": 106,
+    "con_precios_entrada_salida": 164,
+    "episodios": 231,
+    "faltantes": {
+     "historia_previa_insuficiente": 125,
+     "vela_entrada_ausente": 19,
+     "vela_salida_ausente": 48
+    },
+    "por_bloques_previos": {
+     "0": 43,
+     "1": 20,
+     "10": 14,
+     "11": 9,
+     "12": 11,
+     "13": 7,
+     "14": 10,
+     "15": 3,
+     "16": 5,
+     "17": 5,
+     "18": 6,
+     "19": 3,
+     "2": 17,
+     "3": 15,
+     "4": 13,
+     "5": 17,
+     "6": 8,
+     "7": 11,
+     "8": 6,
+     "9": 8
+    },
+    "por_simbolo_completos": {
+     "2ZUSDT": 5,
+     "AKEUSDT": 8,
+     "AVNTUSDT": 6,
+     "BANANAS31USDT": 6,
+     "BEAMXUSDT": 1,
+     "BERAUSDT": 5,
+     "BMTUSDT": 1,
+     "BTWUSDT": 8,
+     "BULLAUSDT": 6,
+     "CRVUSDT": 2,
+     "DOGSUSDT": 2,
+     "ENJUSDT": 2,
+     "HAEDALUSDT": 1,
+     "SHELLUSDT": 6,
+     "SOPHUSDT": 6,
+     "TACUSDT": 7,
+     "TIAUSDT": 5,
+     "ZESTUSDT": 1
+    }
+   },
+   "ternas_contiguas": 1091,
+   "ventanas": {
+    "data_quality": {
+     "OK": 1199,
+     "PARTIAL_OK": 54
+    },
+    "filas_flujo": 1253,
+    "filas_libro": 1200,
+    "flujo_sin_libro": 54,
+    "simbolos": 47,
+    "ventanas": 1199,
+    "ventanas_validas": 1033
+   }
+  },
+  {
+   "fuente_precios": "research_flow_1m.price_open/price_close (uniforme); consultas_klines.jsonl solo como contraste",
+   "klines_contraste": {
+    "comparadas": 736,
+    "dif_rel_max": 0.0016393442622951219,
+    "dif_rel_mediana": 0.0,
+    "distintas": 160,
+    "identicas": 576,
+    "velas_contradictorias": 0,
+    "velas_unicas": 1197
+   },
+   "patron": {
+    "alertas_brutas": 5,
+    "completos": 1,
+    "con_historia_previa_6_bloques": 1,
+    "con_precios_entrada_salida": 4,
+    "episodios": 5,
+    "faltantes": {
+     "historia_previa_insuficiente": 4,
+     "vela_salida_ausente": 1
+    },
+    "por_bloques_previos": {
+     "0": 2,
+     "1": 1,
+     "4": 1,
+     "6": 1
+    },
+    "por_simbolo_completos": {
+     "MAGMAUSDT": 1
+    }
+   },
+   "run_id": "exp-v2-ventana-3-20261115a",
+   "solo_precio": {
+    "alertas_brutas": 462,
+    "completos": 57,
+    "con_historia_previa_6_bloques": 81,
+    "con_precios_entrada_salida": 159,
+    "episodios": 229,
+    "faltantes": {
+     "historia_previa_insuficiente": 148,
+     "vela_entrada_ausente": 23,
+     "vela_salida_ausente": 47
+    },
+    "por_bloques_previos": {
+     "0": 63,
+     "1": 19,
+     "10": 10,
+     "11": 6,
+     "12": 3,
+     "13": 2,
+     "14": 8,
+     "15": 4,
+     "16": 2,
+     "17": 5,
+     "18": 6,
+     "2": 21,
+     "3": 15,
+     "4": 13,
+     "5": 17,
+     "6": 11,
+     "7": 12,
+     "8": 8,
+     "9": 4
+    },
+    "por_simbolo_completos": {
+     "0GUSDT": 2,
+     "2ZUSDT": 3,
+     "AGTUSDT": 1,
+     "ARIAUSDT": 7,
+     "ASTERUSDT": 2,
+     "BTWUSDT": 8,
+     "EVAAUSDT": 6,
+     "INITUSDT": 5,
+     "JCTUSDT": 6,
+     "JELLYJELLYUSDT": 1,
+     "MAGMAUSDT": 7,
+     "SOPHUSDT": 8,
+     "ZILUSDT": 1
+    }
+   },
+   "ternas_contiguas": 1066,
+   "ventanas": {
+    "data_quality": {
+     "OK": 1187,
+     "PARTIAL_OK": 42
+    },
+    "filas_flujo": 1229,
+    "filas_libro": 1197,
+    "flujo_sin_libro": 39,
+    "simbolos": 41,
+    "ventanas": 1190,
+    "ventanas_validas": 1049
+   }
+  },
+  {
+   "fuente_precios": "research_flow_1m.price_open/price_close (captura sin consultas_klines.jsonl)",
+   "klines_contraste": null,
+   "patron": {
+    "alertas_brutas": 2,
+    "completos": 0,
+    "con_historia_previa_6_bloques": 0,
+    "con_precios_entrada_salida": 2,
+    "episodios": 2,
+    "faltantes": {
+     "historia_previa_insuficiente": 2
+    },
+    "por_bloques_previos": {
+     "0": 1,
+     "5": 1
+    },
+    "por_simbolo_completos": {}
+   },
+   "run_id": "public-pilot-1h-20261105a",
+   "solo_precio": {
+    "alertas_brutas": 433,
+    "completos": 58,
+    "con_historia_previa_6_bloques": 78,
+    "con_precios_entrada_salida": 146,
+    "episodios": 217,
+    "faltantes": {
+     "historia_previa_insuficiente": 139,
+     "vela_entrada_ausente": 26,
+     "vela_salida_ausente": 45
+    },
+    "por_bloques_previos": {
+     "0": 50,
+     "1": 26,
+     "10": 6,
+     "11": 2,
+     "12": 7,
+     "13": 6,
+     "14": 1,
+     "15": 7,
+     "16": 6,
+     "17": 3,
+     "18": 5,
+     "19": 4,
+     "2": 18,
+     "3": 12,
+     "4": 20,
+     "5": 13,
+     "6": 11,
+     "7": 9,
+     "8": 6,
+     "9": 5
+    },
+    "por_simbolo_completos": {
+     "2ZUSDT": 6,
+     "AKEUSDT": 1,
+     "ATUSDT": 7,
+     "CAPUSDT": 5,
+     "CLANKERUSDT": 5,
+     "CLOUSDT": 1,
+     "EVAAUSDT": 3,
+     "GWEIUSDT": 4,
+     "HUMAUSDT": 7,
+     "JCTUSDT": 6,
+     "LYNUSDT": 7,
+     "ONUSDT": 3,
+     "THEUSDT": 3
+    }
+   },
+   "ternas_contiguas": 1054,
+   "ventanas": {
+    "data_quality": {
+     "OK": 1185,
+     "PARTIAL_OK": 46
+    },
+    "filas_flujo": 1231,
+    "filas_libro": 1195,
+    "flujo_sin_libro": 45,
+    "simbolos": 44,
+    "ventanas": 1186,
+    "ventanas_validas": 1012
+   }
+  },
+  {
+   "fuente_precios": "research_flow_1m.price_open/price_close (captura sin consultas_klines.jsonl)",
+   "klines_contraste": null,
+   "patron": {
+    "alertas_brutas": 7,
+    "completos": 1,
+    "con_historia_previa_6_bloques": 2,
+    "con_precios_entrada_salida": 6,
+    "episodios": 7,
+    "faltantes": {
+     "historia_previa_insuficiente": 5,
+     "vela_entrada_ausente": 1
+    },
+    "por_bloques_previos": {
+     "0": 1,
+     "1": 2,
+     "10": 1,
+     "19": 1,
+     "2": 1,
+     "4": 1
+    },
+    "por_simbolo_completos": {
+     "AKEUSDT": 1
+    }
+   },
+   "run_id": "public-pilot-1h-20261106a",
+   "solo_precio": {
+    "alertas_brutas": 448,
+    "completos": 86,
+    "con_historia_previa_6_bloques": 112,
+    "con_precios_entrada_salida": 177,
+    "episodios": 237,
+    "faltantes": {
+     "historia_previa_insuficiente": 125,
+     "vela_entrada_ausente": 21,
+     "vela_salida_ausente": 39
+    },
+    "por_bloques_previos": {
+     "0": 37,
+     "1": 19,
+     "10": 10,
+     "11": 4,
+     "12": 9,
+     "13": 5,
+     "14": 6,
+     "15": 11,
+     "16": 8,
+     "17": 8,
+     "18": 5,
+     "19": 8,
+     "2": 25,
+     "3": 18,
+     "4": 16,
+     "5": 10,
+     "6": 12,
+     "7": 11,
+     "8": 9,
+     "9": 6
+    },
+    "por_simbolo_completos": {
+     "1MBABYDOGEUSDT": 5,
+     "AINUSDT": 7,
+     "AKEUSDT": 4,
+     "ATUSDT": 6,
+     "AUSDT": 5,
+     "BANKUSDT": 5,
+     "BIRBUSDT": 10,
+     "CYBERUSDT": 7,
+     "ELSAUSDT": 6,
+     "HANAUSDT": 5,
+     "HUMAUSDT": 8,
+     "JCTUSDT": 6,
+     "POWERUSDT": 2,
+     "SPACEUSDT": 2,
+     "UAIUSDT": 8
+    }
+   },
+   "ternas_contiguas": 1103,
+   "ventanas": {
+    "data_quality": {
+     "OK": 1191,
+     "PARTIAL_OK": 45
+    },
+    "filas_flujo": 1236,
+    "filas_libro": 1196,
+    "flujo_sin_libro": 41,
+    "simbolos": 31,
+    "ventanas": 1195,
+    "ventanas_validas": 1037
+   }
+  }
+ ],
+ "totales": {
+  "patron": {
+   "completos": 2,
+   "episodios": 17,
+   "hist": 3,
+   "precios": 14
+  },
+  "solo_precio": {
+   "completos": 279,
+   "episodios": 914,
+   "hist": 377,
+   "precios": 646
+  }
+ },
+ "version": "extension-previa-inventario-v1"
+}
