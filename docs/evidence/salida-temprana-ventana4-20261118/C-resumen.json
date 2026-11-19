@@ -1,0 +1,699 @@
+{
+ "casos_patron": [
+  {
+   "cut_iso": "2026-11-16T19:30:01.355000+00:00",
+   "delta_bps": 104.53920220082624,
+   "direccion": "SHORT",
+   "disponibilidad_iso": "2026-11-16T19:31:00.149000+00:00",
+   "entrada_iso": "2026-11-16T19:31:00+00:00",
+   "estado": "adelantada_resoluble",
+   "hueco_k": null,
+   "hueco_motivo": null,
+   "minutos_adelanto": 4,
+   "motivo": null,
+   "precio_entrada": 0.018175,
+   "precio_salida_alternativa": 0.018165,
+   "precio_salida_original": 0.018355,
+   "primer_cambio_fin_iso": "2026-11-16T19:31:00+00:00",
+   "primer_cambio_inicio_iso": "2026-11-16T19:30:00+00:00",
+   "primer_cambio_k": 0,
+   "primer_cambio_tipo": "debilitamiento",
+   "retorno_alternativo_bps": 5.502063273727931,
+   "retorno_original_bps": -99.03713892709831,
+   "salida_alternativa_iso": "2026-11-16T19:32:00+00:00",
+   "salida_original_iso": "2026-11-16T19:36:00+00:00",
+   "symbol": "BLESSUSDT"
+  },
+  {
+   "cut_iso": "2026-11-16T19:56:04.530000+00:00",
+   "delta_bps": null,
+   "direccion": "LONG",
+   "disponibilidad_iso": null,
+   "entrada_iso": "2026-11-16T19:57:00+00:00",
+   "estado": "no_evaluable",
+   "hueco_k": 0,
+   "hueco_motivo": "flujo_incompleto",
+   "minutos_adelanto": null,
+   "motivo": "hueco_antes_del_primer_cambio",
+   "precio_entrada": 0.034,
+   "precio_salida_alternativa": null,
+   "precio_salida_original": 0.03415,
+   "primer_cambio_fin_iso": null,
+   "primer_cambio_inicio_iso": null,
+   "primer_cambio_k": null,
+   "primer_cambio_tipo": null,
+   "retorno_alternativo_bps": null,
+   "retorno_original_bps": 44.11764705882337,
+   "salida_alternativa_iso": null,
+   "salida_original_iso": "2026-11-16T20:02:00+00:00",
+   "symbol": "STRKUSDT"
+  },
+  {
+   "cut_iso": "2026-11-16T20:06:00.464000+00:00",
+   "delta_bps": 175.09838590087145,
+   "direccion": "SHORT",
+   "disponibilidad_iso": "2026-11-16T20:07:04.997000+00:00",
+   "entrada_iso": "2026-11-16T20:07:00+00:00",
+   "estado": "adelantada_resoluble",
+   "hueco_k": null,
+   "hueco_motivo": null,
+   "minutos_adelanto": 4,
+   "motivo": null,
+   "precio_entrada": 0.017533,
+   "precio_salida_alternativa": 0.017475,
+   "precio_salida_original": 0.017782,
+   "primer_cambio_fin_iso": "2026-11-16T20:07:00+00:00",
+   "primer_cambio_inicio_iso": "2026-11-16T20:06:00+00:00",
+   "primer_cambio_k": 0,
+   "primer_cambio_tipo": "debilitamiento",
+   "retorno_alternativo_bps": 33.08047681514825,
+   "retorno_original_bps": -142.0179090857232,
+   "salida_alternativa_iso": "2026-11-16T20:08:00+00:00",
+   "salida_original_iso": "2026-11-16T20:12:00+00:00",
+   "symbol": "BLESSUSDT"
+  },
+  {
+   "cut_iso": "2026-11-16T20:15:00.502000+00:00",
+   "delta_bps": 123.24530097549413,
+   "direccion": "LONG",
+   "disponibilidad_iso": "2026-11-16T20:16:00.272000+00:00",
+   "entrada_iso": "2026-11-16T20:16:00+00:00",
+   "estado": "adelantada_resoluble",
+   "hueco_k": null,
+   "hueco_motivo": null,
+   "minutos_adelanto": 4,
+   "motivo": null,
+   "precio_entrada": 0.21015,
+   "precio_salida_alternativa": 0.20945,
+   "precio_salida_original": 0.20686,
+   "primer_cambio_fin_iso": "2026-11-16T20:16:00+00:00",
+   "primer_cambio_inicio_iso": "2026-11-16T20:15:00+00:00",
+   "primer_cambio_k": 0,
+   "primer_cambio_tipo": "giro",
+   "retorno_alternativo_bps": -33.30954080418724,
+   "retorno_original_bps": -156.55484177968137,
+   "salida_alternativa_iso": "2026-11-16T20:17:00+00:00",
+   "salida_original_iso": "2026-11-16T20:21:00+00:00",
+   "symbol": "ARIAUSDT"
+  }
+ ],
+ "embudo": {
+  "adelantada_resoluble": 106,
+  "anclas": 143,
+  "anclas_patron": 4,
+  "cambios_disponibles_antes_de_la_entrada": 0,
+  "cambios_identificados": 106,
+  "cambios_por_bloque": {
+   "0": 99,
+   "1": 5,
+   "2": 2
+  },
+  "motivos": {
+   "hueco_antes_del_primer_cambio": 9,
+   "resultado_original_no_resoluble": 28
+  },
+  "no_evaluable": 37,
+  "original_conservada": 0,
+  "original_no_resoluble": 28,
+  "original_resoluble": 115,
+  "pares_con_salida_adelantada": 106,
+  "pares_evaluables": 106,
+  "pares_sin_adelanto": 0,
+  "sin_cambio_utilizable": 0
+ },
+ "limitaciones": [
+  "captura ya usada en el desarrollo del detector: hallazgo exploratorio, no prueba independiente",
+  "aperturas de velas como precios simulados: no son fills, no incluyen latencia ni impacto",
+  "los agregados de 1 minuto no se atribuyen a un segundo exacto",
+  "una caida o subida de la profundidad media no demuestra retirada ni reposicion de ordenes",
+  "funding UNKNOWN; 16 bps es solo sensibilidad; retornos brutos",
+  "la salida alternativa comparte entrada con la original: el delta mide solo el cambio de salida"
+ ],
+ "minuto_de_salida_distinto_por_definicion": 0,
+ "niveles_adelantados": {
+  "alternativa_bruto_media_bps": -1.9192,
+  "alternativa_bruto_mediana_bps": 3.0683,
+  "alternativa_neto_media_bps": -17.9192,
+  "alternativa_neto_mediana_bps": -12.9317,
+  "alternativa_neto_positivo": 25,
+  "coste_ida_vuelta_bps": 16.0,
+  "delta_media_bps": 4.6756,
+  "n": 106,
+  "original_bruto_media_bps": -6.5948,
+  "original_bruto_mediana_bps": 1.2912,
+  "original_neto_media_bps": -22.5948,
+  "original_neto_mediana_bps": -14.7088,
+  "original_neto_positivo": 41
+ },
+ "niveles_por_direccion_adelantados": {
+  "LONG": {
+   "alternativa_bruto_media_bps": 9.0564,
+   "alternativa_bruto_mediana_bps": 8.2489,
+   "alternativa_neto_media_bps": -6.9436,
+   "alternativa_neto_mediana_bps": -7.7511,
+   "alternativa_neto_positivo": 17,
+   "coste_ida_vuelta_bps": 16.0,
+   "delta_media_bps": -3.1425,
+   "n": 52,
+   "original_bruto_media_bps": 12.1989,
+   "original_bruto_mediana_bps": 9.1376,
+   "original_neto_media_bps": -3.8011,
+   "original_neto_mediana_bps": -6.8624,
+   "original_neto_positivo": 25
+  },
+  "SHORT": {
+   "alternativa_bruto_media_bps": -12.4883,
+   "alternativa_bruto_mediana_bps": 0.377,
+   "alternativa_neto_media_bps": -28.4883,
+   "alternativa_neto_mediana_bps": -15.623,
+   "alternativa_neto_positivo": 8,
+   "coste_ida_vuelta_bps": 16.0,
+   "delta_media_bps": 12.2042,
+   "n": 54,
+   "original_bruto_media_bps": -24.6924,
+   "original_bruto_mediana_bps": -1.2528,
+   "original_neto_media_bps": -40.6924,
+   "original_neto_mediana_bps": -17.2528,
+   "original_neto_positivo": 16
+  }
+ },
+ "niveles_todos": {
+  "alternativa_bruto_media_bps": -1.9192,
+  "alternativa_bruto_mediana_bps": 3.0683,
+  "alternativa_neto_media_bps": -17.9192,
+  "alternativa_neto_mediana_bps": -12.9317,
+  "alternativa_neto_positivo": 25,
+  "coste_ida_vuelta_bps": 16.0,
+  "delta_media_bps": 4.6756,
+  "n": 106,
+  "original_bruto_media_bps": -6.5948,
+  "original_bruto_mediana_bps": 1.2912,
+  "original_neto_media_bps": -22.5948,
+  "original_neto_mediana_bps": -14.7088,
+  "original_neto_positivo": 41
+ },
+ "origen": {
+  "fuentes_intactas": true,
+  "hashes": {
+   "anclas_cambios.jsonl": "6ca94a9408edcdab8c6399582938e79232c8986e3f84a3ff8b1320e77e3db3ea",
+   "cobertura_json": "39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd",
+   "consultas_klines.jsonl": "4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874",
+   "episodios_patron_originales.jsonl": "19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f",
+   "episodios_referencia_universo_igual.jsonl": "dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7",
+   "research.db": "6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1"
+  }
+ },
+ "pares_adelantados": {
+  "empeoran": 55,
+  "ganancias_extra": {
+   "media_bps": 19.8867,
+   "mediana_bps": 18.392,
+   "n": 6,
+   "suma_bps": 119.3203
+  },
+  "ganancias_sacrificadas": {
+   "media_bps": -65.0065,
+   "mediana_bps": -41.1551,
+   "n": 44,
+   "suma_bps": -2860.2838
+  },
+  "iguales": 3,
+  "max_bps": 452.2167,
+  "media_bps": 4.6756,
+  "mediana_bps": -2.8746,
+  "mejoran": 48,
+  "min_bps": -278.73,
+  "n": 106,
+  "original_cero": 2,
+  "original_negativo": 51,
+  "original_neutro": {
+   "media_bps": 2.0068,
+   "mediana_bps": 2.0068,
+   "n": 2,
+   "suma_bps": 4.0137
+  },
+  "original_positivo": 53,
+  "perdidas_empeoradas": {
+   "media_bps": -20.9416,
+   "mediana_bps": -17.6435,
+   "n": 10,
+   "suma_bps": -209.4156
+  },
+  "perdidas_recortadas": {
+   "media_bps": 83.9508,
+   "mediana_bps": 57.1021,
+   "n": 41,
+   "suma_bps": 3441.9821
+  },
+  "suma_bps": 495.6167
+ },
+ "pares_todos": {
+  "empeoran": 55,
+  "ganancias_extra": {
+   "media_bps": 19.8867,
+   "mediana_bps": 18.392,
+   "n": 6,
+   "suma_bps": 119.3203
+  },
+  "ganancias_sacrificadas": {
+   "media_bps": -65.0065,
+   "mediana_bps": -41.1551,
+   "n": 44,
+   "suma_bps": -2860.2838
+  },
+  "iguales": 3,
+  "max_bps": 452.2167,
+  "media_bps": 4.6756,
+  "mediana_bps": -2.8746,
+  "mejoran": 48,
+  "min_bps": -278.73,
+  "n": 106,
+  "original_cero": 2,
+  "original_negativo": 51,
+  "original_neutro": {
+   "media_bps": 2.0068,
+   "mediana_bps": 2.0068,
+   "n": 2,
+   "suma_bps": 4.0137
+  },
+  "original_positivo": 53,
+  "perdidas_empeoradas": {
+   "media_bps": -20.9416,
+   "mediana_bps": -17.6435,
+   "n": 10,
+   "suma_bps": -209.4156
+  },
+  "perdidas_recortadas": {
+   "media_bps": 83.9508,
+   "mediana_bps": 57.1021,
+   "n": 41,
+   "suma_bps": 3441.9821
+  },
+  "suma_bps": 495.6167
+ },
+ "por_direccion_adelantados": {
+  "LONG": {
+   "empeoran": 28,
+   "ganancias_extra": {
+    "media_bps": 18.2098,
+    "mediana_bps": 9.1788,
+    "n": 3,
+    "suma_bps": 54.6294
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -76.3229,
+    "mediana_bps": -45.0346,
+    "n": 25,
+    "suma_bps": -1908.0716
+   },
+   "iguales": 1,
+   "max_bps": 227.3584,
+   "media_bps": -3.1425,
+   "mediana_bps": -4.3592,
+   "mejoran": 23,
+   "min_bps": -201.3488,
+   "n": 52,
+   "original_cero": 0,
+   "original_negativo": 23,
+   "original_neutro": {
+    "media_bps": null,
+    "mediana_bps": null,
+    "n": 0,
+    "suma_bps": 0.0
+   },
+   "original_positivo": 29,
+   "perdidas_empeoradas": {
+    "media_bps": -11.6227,
+    "mediana_bps": -6.9308,
+    "n": 3,
+    "suma_bps": -34.868
+   },
+   "perdidas_recortadas": {
+    "media_bps": 86.2451,
+    "mediana_bps": 78.8525,
+    "n": 20,
+    "suma_bps": 1724.9023
+   },
+   "suma_bps": -163.4079
+  },
+  "SHORT": {
+   "empeoran": 27,
+   "ganancias_extra": {
+    "media_bps": 21.5636,
+    "mediana_bps": 18.4957,
+    "n": 3,
+    "suma_bps": 64.6909
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -50.1164,
+    "mediana_bps": -39.8874,
+    "n": 19,
+    "suma_bps": -952.2122
+   },
+   "iguales": 2,
+   "max_bps": 452.2167,
+   "media_bps": 12.2042,
+   "mediana_bps": -1.4171,
+   "mejoran": 25,
+   "min_bps": -278.73,
+   "n": 54,
+   "original_cero": 2,
+   "original_negativo": 28,
+   "original_neutro": {
+    "media_bps": 2.0068,
+    "mediana_bps": 2.0068,
+    "n": 2,
+    "suma_bps": 4.0137
+   },
+   "original_positivo": 24,
+   "perdidas_empeoradas": {
+    "media_bps": -24.9354,
+    "mediana_bps": -25.8824,
+    "n": 7,
+    "suma_bps": -174.5476
+   },
+   "perdidas_recortadas": {
+    "media_bps": 81.7657,
+    "mediana_bps": 30.7062,
+    "n": 21,
+    "suma_bps": 1717.0799
+   },
+   "suma_bps": 659.0246
+  }
+ },
+ "por_direccion_todos": {
+  "LONG": {
+   "empeoran": 28,
+   "ganancias_extra": {
+    "media_bps": 18.2098,
+    "mediana_bps": 9.1788,
+    "n": 3,
+    "suma_bps": 54.6294
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -76.3229,
+    "mediana_bps": -45.0346,
+    "n": 25,
+    "suma_bps": -1908.0716
+   },
+   "iguales": 1,
+   "max_bps": 227.3584,
+   "media_bps": -3.1425,
+   "mediana_bps": -4.3592,
+   "mejoran": 23,
+   "min_bps": -201.3488,
+   "n": 52,
+   "original_cero": 0,
+   "original_negativo": 23,
+   "original_neutro": {
+    "media_bps": null,
+    "mediana_bps": null,
+    "n": 0,
+    "suma_bps": 0.0
+   },
+   "original_positivo": 29,
+   "perdidas_empeoradas": {
+    "media_bps": -11.6227,
+    "mediana_bps": -6.9308,
+    "n": 3,
+    "suma_bps": -34.868
+   },
+   "perdidas_recortadas": {
+    "media_bps": 86.2451,
+    "mediana_bps": 78.8525,
+    "n": 20,
+    "suma_bps": 1724.9023
+   },
+   "suma_bps": -163.4079
+  },
+  "SHORT": {
+   "empeoran": 27,
+   "ganancias_extra": {
+    "media_bps": 21.5636,
+    "mediana_bps": 18.4957,
+    "n": 3,
+    "suma_bps": 64.6909
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -50.1164,
+    "mediana_bps": -39.8874,
+    "n": 19,
+    "suma_bps": -952.2122
+   },
+   "iguales": 2,
+   "max_bps": 452.2167,
+   "media_bps": 12.2042,
+   "mediana_bps": -1.4171,
+   "mejoran": 25,
+   "min_bps": -278.73,
+   "n": 54,
+   "original_cero": 2,
+   "original_negativo": 28,
+   "original_neutro": {
+    "media_bps": 2.0068,
+    "mediana_bps": 2.0068,
+    "n": 2,
+    "suma_bps": 4.0137
+   },
+   "original_positivo": 24,
+   "perdidas_empeoradas": {
+    "media_bps": -24.9354,
+    "mediana_bps": -25.8824,
+    "n": 7,
+    "suma_bps": -174.5476
+   },
+   "perdidas_recortadas": {
+    "media_bps": 81.7657,
+    "mediana_bps": 30.7062,
+    "n": 21,
+    "suma_bps": 1717.0799
+   },
+   "suma_bps": 659.0246
+  }
+ },
+ "por_tipo_adelantados": {
+  "debilitamiento": {
+   "empeoran": 15,
+   "ganancias_extra": {
+    "media_bps": 7.9974,
+    "mediana_bps": 7.9974,
+    "n": 1,
+    "suma_bps": 7.9974
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -56.6249,
+    "mediana_bps": -42.4228,
+    "n": 13,
+    "suma_bps": -736.1241
+   },
+   "iguales": 0,
+   "max_bps": 227.3584,
+   "media_bps": -7.3318,
+   "mediana_bps": -14.3861,
+   "mejoran": 7,
+   "min_bps": -201.3488,
+   "n": 22,
+   "original_cero": 0,
+   "original_negativo": 8,
+   "original_neutro": {
+    "media_bps": null,
+    "mediana_bps": null,
+    "n": 0,
+    "suma_bps": 0.0
+   },
+   "original_positivo": 14,
+   "perdidas_empeoradas": {
+    "media_bps": -22.3598,
+    "mediana_bps": -22.3598,
+    "n": 2,
+    "suma_bps": -44.7195
+   },
+   "perdidas_recortadas": {
+    "media_bps": 101.9245,
+    "mediana_bps": 89.2675,
+    "n": 6,
+    "suma_bps": 611.5469
+   },
+   "suma_bps": -161.2993
+  },
+  "giro": {
+   "empeoran": 35,
+   "ganancias_extra": {
+    "media_bps": 27.9519,
+    "mediana_bps": 27.907,
+    "n": 3,
+    "suma_bps": 83.8558
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -76.3223,
+    "mediana_bps": -52.4476,
+    "n": 27,
+    "suma_bps": -2060.7019
+   },
+   "iguales": 1,
+   "max_bps": 452.2167,
+   "media_bps": 3.5558,
+   "mediana_bps": -4.9418,
+   "mejoran": 29,
+   "min_bps": -278.73,
+   "n": 65,
+   "original_cero": 2,
+   "original_negativo": 32,
+   "original_neutro": {
+    "media_bps": 2.0068,
+    "mediana_bps": 2.0068,
+    "n": 2,
+    "suma_bps": 4.0137
+   },
+   "original_positivo": 31,
+   "perdidas_empeoradas": {
+    "media_bps": -22.5379,
+    "mediana_bps": -25.8824,
+    "n": 7,
+    "suma_bps": -157.7653
+   },
+   "perdidas_recortadas": {
+    "media_bps": 94.4689,
+    "mediana_bps": 77.6688,
+    "n": 25,
+    "suma_bps": 2361.7216
+   },
+   "suma_bps": 231.1239
+  },
+  "precio_sin_avance": {
+   "empeoran": 3,
+   "ganancias_extra": {
+    "media_bps": 18.2882,
+    "mediana_bps": 18.2882,
+    "n": 1,
+    "suma_bps": 18.2882
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -12.7138,
+    "mediana_bps": -10.4439,
+    "n": 3,
+    "suma_bps": -38.1413
+   },
+   "iguales": 0,
+   "max_bps": 57.1021,
+   "media_bps": 13.5425,
+   "mediana_bps": 7.727,
+   "mejoran": 3,
+   "min_bps": -24.8633,
+   "n": 6,
+   "original_cero": 0,
+   "original_negativo": 2,
+   "original_neutro": {
+    "media_bps": null,
+    "mediana_bps": null,
+    "n": 0,
+    "suma_bps": 0.0
+   },
+   "original_positivo": 4,
+   "perdidas_empeoradas": {
+    "media_bps": null,
+    "mediana_bps": null,
+    "n": 0,
+    "suma_bps": 0.0
+   },
+   "perdidas_recortadas": {
+    "media_bps": 50.5539,
+    "mediana_bps": 50.5539,
+    "n": 2,
+    "suma_bps": 101.1078
+   },
+   "suma_bps": 81.2547
+  },
+  "profundidad_deja_de_caer": {
+   "empeoran": 2,
+   "ganancias_extra": {
+    "media_bps": 9.1788,
+    "mediana_bps": 9.1788,
+    "n": 1,
+    "suma_bps": 9.1788
+   },
+   "ganancias_sacrificadas": {
+    "media_bps": -25.3165,
+    "mediana_bps": -25.3165,
+    "n": 1,
+    "suma_bps": -25.3165
+   },
+   "iguales": 2,
+   "max_bps": 151.6588,
+   "media_bps": 26.5029,
+   "mediana_bps": 9.99,
+   "mejoran": 9,
+   "min_bps": -25.3165,
+   "n": 13,
+   "original_cero": 0,
+   "original_negativo": 9,
+   "original_neutro": {
+    "media_bps": null,
+    "mediana_bps": null,
+    "n": 0,
+    "suma_bps": 0.0
+   },
+   "original_positivo": 4,
+   "perdidas_empeoradas": {
+    "media_bps": -6.9308,
+    "mediana_bps": -6.9308,
+    "n": 1,
+    "suma_bps": -6.9308
+   },
+   "perdidas_recortadas": {
+    "media_bps": 45.9507,
+    "mediana_bps": 28.5298,
+    "n": 8,
+    "suma_bps": 367.6058
+   },
+   "suma_bps": 344.5373
+  }
+ },
+ "pregunta": "manteniendo la entrada original, cerrar al primer cambio observable recorta mas perdidas de las ganancias que sacrifica?",
+ "reglas_fijadas": {
+  "bloques_relevantes": "solo los que cumplen fin + 1 min < salida original (b_0..b_3)",
+  "cambio": "primer bloque b_0..b_5 con la regla publicada y prioridad giro > debilitamiento > precio_sin_avance > profundidad_deja_de_caer; umbrales sin ajustar",
+  "coste_sensibilidad_bps": 16.0,
+  "delta": "retorno alternativo menos retorno original, alineado por direccion; positivo = mejora",
+  "disponibilidad": "maximo de los datos que acreditan el cambio: cierre del bloque y as_of del flujo; mas as_of del cierre base si es precio_sin_avance; mas as_of del libro si es profundidad_deja_de_caer",
+  "elegibilidad_b_0": "b_0 cubre el primer minuto posterior a la ventana de senal y su flujo solo esta disponible despues de la entrada: se admite. Se verifica que ningun cambio resulte disponible antes de la entrada",
+  "entrada": "apertura del primer minuto estrictamente posterior al corte; no se mueve",
+  "hueco": "un bloque no utilizable antes del primer cambio deja el ancla como no evaluable; un hueco no es sin cambio",
+  "salida_alternativa": "apertura del primer minuto estrictamente posterior a la disponibilidad, solo si es estrictamente anterior a la salida original",
+  "salida_original": "apertura a 5 minutos de la entrada",
+  "universo": "143 anclas comunes publicadas; las 4 del patron estan dentro y no se suman otra vez",
+  "veredicto": "menos de 30 pares con salida efectivamente adelantada -> INSUFICIENTE"
+ },
+ "run_id": "exp-v2-ventana-4-20261116a",
+ "veredicto": {
+  "alcance": "esta ventana unicamente; 30 pares no validan la regla",
+  "empeoran": 55,
+  "iguales": 3,
+  "media_bps": 4.6756,
+  "mediana_bps": -2.8746,
+  "mejoran": 48,
+  "minimo_pares": 30,
+  "pares_adelantados": 106,
+  "regla": "menos de 30 pares resolubles con salida efectivamente adelantada -> INSUFICIENTE",
+  "veredicto": "SIN_DIRECCION_CLARA"
+ },
+ "verificacion": {
+  "anclas_publicadas_coinciden": 143,
+  "bloques_publicados_coinciden": 858,
+  "disponibilidad_publicada_registrada": 143,
+  "filas": {
+   "filas_flujo": 1265,
+   "filas_libro": 1197,
+   "flujo_otro_run_id": 0,
+   "libro_otro_run_id": 0
+  },
+  "velas": {
+   "contradictorias": 4,
+   "simbolos": 25,
+   "velas_unicas": 2362
+  }
+ },
+ "version": "salida-temprana-v1",
+ "version_anclas": "anclas-comunes-ventana4-v1",
+ "version_diagnostico_reutilizado": "diagnostico-factores-v1"
+}

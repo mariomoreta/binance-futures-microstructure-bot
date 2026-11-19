@@ -1,0 +1,124 @@
+COMANDO Y EJECUCION - salida temprana por primer cambio observable (ventana 4)
+Bloque: salida-temprana-ventana4-20261118
+Fecha de ejecucion (UTC): 2026-11-19T00:45Z
+Rama: research/universe-liquidez-v1
+HEAD al ejecutar: eac06450f0020a12fc09e51ce02e4424fae0fb9d
+Remoto: origin https://github.com/mariomoreta/binance-futures-microstructure-bot.git
+
+Sin Binance, sin consultas publicas, sin capturas nuevas, sin ordenes, sin claves,
+sin cambios de patron, umbrales, horizonte, agrupacion ni estrategia productiva.
+Las fuentes se leen en modo lectura; los derivados nuevos se escriben fuera de Git.
+
+================================================================================
+1. FUENTES (rutas y SHA-256 comprobados antes y despues por el propio modulo)
+================================================================================
+
+research.db
+  6ad6f716889a71ceffc5ffc36ed89d904544d3a75facfe1da7c4385b9ad6a7f1
+  C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db
+
+cobertura_json (copia publicada en Git; es la misma que uso el bloque anterior)
+  39652bf00d594245943ec7114c0e6933fce2e49a8caf2812915cc478f9eaf4bd
+  docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json
+
+consultas_klines.jsonl
+  4ee61463934e58dd86ec15736738965644b2511b675d92c9f75f48c30ca61874
+  C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl
+
+episodios_referencia_universo_igual.jsonl  (las 143 anclas congeladas)
+  dd31588992f48e3cd09d27370d22f1deb155957ecc6997aef0f2301e0095a6e7
+  C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\episodios_referencia_universo_igual.jsonl
+
+episodios_patron_originales.jsonl  (las 4 anclas del patron)
+  19b5967102abe01807a6c097d6f94c0b726e0987897c2513f7a4983ac40c7f0f
+  C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\episodios_patron_originales.jsonl
+
+anclas_cambios.jsonl  (143 x 6 bloques publicados; solo para contrastar la regla)
+  6ca94a9408edcdab8c6399582938e79232c8986e3f84a3ff8b1320e77e3db3ea
+  C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1\anclas_cambios.jsonl
+
+"fuentes_intactas": true  (hashes identicos antes y despues de la ejecucion)
+
+================================================================================
+2. CODIGO (SHA-256 de los ficheros con los que se ejecuto)
+================================================================================
+
+9306eca5e656d5a9f83b2d585737fe37240e4d90c583261324a5137c497b8608  scripts\salida_temprana_ventana4.py
+315f2b9c38b50e5504c0a3fb51eba5012919e9c8679d2e8d2ba7fadeb9918a54  scripts\verificar_salida_temprana_ventana4.py
+18af99f72af3c0e3825b88800cf2e97cd349939b624404f86c5e7784f90c56d5  tests\test_salida_temprana_ventana4.py
+
+Modulos publicados reutilizados sin modificar (git diff vacio contra la base):
+  e91550054d4c9b89af4350fd7a5d7cbe6ce55936c55ac9a584d3f7f80f225d5f  scripts\replay_patron_ventana4.py
+  850a99f46dd60e9464d8929cb0fe47033acba3a331b908e3f43b0a0640a3a1c5  scripts\comparar_anclas_ventana4.py
+  e79675d2aa6aef95bc106247b7204b95129117e94db83510338bc8ab2878a2e3  scripts\diagnostico_cuatro_casos_ventana4.py
+  4e581d8626600194dedb60026f3a75cb83502cb478a340d523fe48953811d864  scripts\diagnostico_factores_ventana4.py
+
+================================================================================
+3. EVALUACION
+================================================================================
+
+python scripts\salida_temprana_ventana4.py ^
+  --db "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db" ^
+  --cobertura "docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json" ^
+  --klines "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl" ^
+  --derivados-anclas "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1" ^
+  --derivados-cambios "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1\anclas_cambios.jsonl" ^
+  --salida "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-salida-temprana-v1" ^
+  --resumen "docs\evidence\salida-temprana-ventana4-20261118\C-resumen.json"
+
+Salida estandar:
+
+{"estado": "ok", "anclas": 143, "anclas_patron": 4, "original_resoluble": 115, "pares_evaluables": 106, "adelantadas": 106, "conservadas": 0, "no_evaluables": 37, "motivos": {"hueco_antes_del_primer_cambio": 9, "resultado_original_no_resoluble": 28}, "cambios_por_bloque": {"0": 99, "1": 5, "2": 2}, "delta_media_adelantadas": 4.6756, "delta_mediana_adelantadas": -2.8746, "delta_suma_adelantadas": 495.6167, "mejoran": 48, "empeoran": 55, "iguales": 3, "veredicto": "SIN_DIRECCION_CLARA", "resumen": "docs\\evidence\\salida-temprana-ventana4-20261118\\C-resumen.json"}
+
+EXIT=0
+
+Determinismo: una segunda ejecucion completa produjo un C-resumen.json
+byte-identico (comparacion linea a linea: IDENTICO).
+
+================================================================================
+4. VERIFICACION INDEPENDIENTE
+================================================================================
+
+python scripts\verificar_salida_temprana_ventana4.py ^
+  --resumen "docs\evidence\salida-temprana-ventana4-20261118\C-resumen.json" ^
+  --derivados "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-salida-temprana-v1" ^
+  --anclas-publicadas "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-anclas-comunes-v1\episodios_referencia_universo_igual.jsonl" ^
+  --klines "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\consultas_klines.jsonl" ^
+  --db "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a\research.db" ^
+  --cobertura "docs\evidence\secuencia-presion-v1-correcciones-20261117\C-cobertura-real.json" ^
+  --anclas-cambios "C:\proyectos\binance-futures-data\exp-v2-ventana-4-20261116a-diagnostico-factores-v1\anclas_cambios.jsonl"
+
+Salida estandar (D-verificacion.txt):
+
+version=verificacion-salida-temprana-v1
+checks=2801 fallos=0
+RESULTADO: OK
+
+EXIT=0
+
+El verificador no importa el modulo evaluado ni ningun modulo del proyecto: relee
+las velas de consultas_klines.jsonl con su propio parser, recalcula precios,
+retornos, deltas, medias, medianas, cubos y agregados, y contrasta los hashes.
+
+================================================================================
+5. PRUEBAS FOCALIZADAS
+================================================================================
+
+python -m pytest tests\test_salida_temprana_ventana4.py ^
+  tests\test_diagnostico_factores_ventana4.py ^
+  tests\test_diagnostico_cuatro_casos_ventana4.py ^
+  tests\test_replay_patron_ventana4.py ^
+  tests\test_comparar_anclas_ventana4.py ^
+  tests\test_secuencia_presion_v1.py ^
+  tests\test_analisis_contrafactual_ventana4.py -q
+
+Salida (B-pytest.txt):
+
+143 passed in 14.91s
+
+EXIT=0
+
+Los 26 tests nuevos cubren los cinco escenarios exigidos y ademas prioridad
+publicada, irrelevancia de b_4/b_5, conservacion con delta nulo, invariancia del
+delta con 16 bps iguales en ambos lados, umbral de 30 pares y exhaustividad de la
+descomposicion perdidas/ganancias.

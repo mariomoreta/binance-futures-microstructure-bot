@@ -1,0 +1,3 @@
+version=verificacion-salida-temprana-v1
+checks=2801 fallos=0
+RESULTADO: OK
