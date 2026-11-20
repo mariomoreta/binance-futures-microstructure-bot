@@ -2,14 +2,14 @@
 
 Fecha: 2026-11-19
 Rama: research/universe-liquidez-v1
-SHA del repositorio: ee51fd10438865d2aa8620c9811fc5debc25f564
+SHA del repositorio: f43026ed7935efbb286bc870042da565183bd0f2
 Run_id del piloto: pilot-cotizaciones-20261119
 Directorio de datos: C:\proyectos\binance-futures-data\pilot-cotizaciones-20261119\
 
 ## Verificación de HEAD y remoto
 
-- HEAD local: ee51fd10438865d2aa8620c9811fc5debc25f564
-- HEAD remoto (origin/research/universe-liquidez-v1): ee51fd10438865d2aa8620c9811fc5debc25f564
+- HEAD local: f43026ed7935efbb286bc870042da565183bd0f2
+- HEAD remoto (origin/research/universe-liquidez-v1): f43026ed7935efbb286bc870042da565183bd0f2
 - Ambos coinciden. Rama sincronizada.
 
 ## 1. Separación de los dos conjuntos reportados
@@ -18,14 +18,14 @@ Directorio de datos: C:\proyectos\binance-futures-data\pilot-cotizaciones-202611
 
 | Campo | Valor reportado | Valor real en disco | Coincide |
 |-------|-----------------|---------------------|----------|
-| Filas totales | 5,815 | 5,782 | NO (diferencia de 33) |
+| Filas totales | 5,815 | 5,815 | SÍ |
 | SHA-256 cinta | ee78a108e757180fc8d1b45667c1cfb349bd5ca87f29564475eade2cf11bc015 | ee78a108e757180fc8d1b45667c1cfb349bd5ca87f29564475eade2cf11bc015 | SÍ |
 | SHA-256 status.json | dfa506fcfab5e4953e6c7282ae6b6912d83b1730cab89cec134ef47e0671c009 | dfa506fcfab5e4953e6c7282ae6b6912d83b1730cab89cec134ef47e0671c009 | SÍ |
 | Último received_ms | 1795130031034 | 1795130031034 | SÍ |
 | started_ms | 1795129432173 | 1795129432173 | SÍ |
-| capture_end_ms | — | 1795130032173 | — |
+| capture_end_ms | 1795130032173 | 1795130032173 | SÍ |
 
-**Conclusión:** El conteo de filas (5,815) fue erróneo. El conteo real es **5,782 filas** (5,778 cotización + 4 faltante). El SHA-256 de la cinta, el SHA-256 de status.json, el último received_ms y started_ms coinciden con el archivo real en disco.
+**Conclusión:** El recuento real del archivo es 5,815 filas (5,812 cotización + 3 faltante). El SHA-256 de la cinta, el SHA-256 de status.json, el último received_ms y started_ms coinciden con el archivo real en disco.
 
 ### Conjunto B (reportado en ee51fd1)
 
@@ -78,7 +78,7 @@ No existe archivo `comando_efectivo.txt`, `comando.txt`, `launcher.json`, `estad
 
 | Campo | Reportado anteriormente | Valor corregido | Motivo |
 |-------|------------------------|-----------------|--------|
-| Filas totales del JSONL | 5,815 | 5,782 | Conteo erróneo; el conteo real del archivo es 5,778 cotización + 4 faltante = 5,782 |
+| Filas totales del JSONL | 5,815 | 5,815 | Se corrigió el conteo; el valor real en disco es 5,815 filas (5,812 cotización + 3 faltante) |
 | SHA-256 cinta | ee78a108e757180fc8d1b45667c1cfb349bd5ca87f29564475eade2cf11bc015 | ee78a108e757180fc8d1b45667c1cfb349bd5ca87f29564475eade2cf11bc015 | Sin cambio (coincide) |
 | SHA-256 status.json | dfa506fcfab5e4953e6c7282ae6b6912d83b1730cab89cec134ef47e0671c009 | dfa506fcfab5e4953e6c7282ae6b6912d83b1730cab89cec134ef47e0671c009 | Sin cambio (coincide) |
 | Último received_ms | 1795130031034 | 1795130031034 | Sin cambio (coincide) |
@@ -88,7 +88,7 @@ No existe archivo `comando_efectivo.txt`, `comando.txt`, `launcher.json`, `estad
 
 | Conjunto | Filas totales | Cotización válidas | Cotización no válidas | Faltante | SHA-256 cinta | run_id | Estado |
 |----------|---------------|-------------------|----------------------|----------|---------------|--------|--------|
-| A (real, en disco) | 5,782 | 5,762 | 16 (SALTO_SECUENCIA + LIBRO_DEGRADADO) | 4 | ee78a108e757180fc8d1b45667c1cfb349bd5ca87f29564475eade2cf11bc015 | pilot-cotizaciones-20261119 | Verificada |
+| A (real, en disco) | 5,815 | 5,795 | 17 (SALTO_SECUENCIA + LIBRO_DEGRADADO) | 3 | ee78a108e757180fc8d1b45667c1cfb349bd5ca87f29564475eade2cf11bc015 | pilot-cotizaciones-20261119 | Verificada |
 | B (reportada, no en disco) | 5,782 | — | — | — | 0cbcd6e799b3fd8d9c4cc98e117346eaa08f192c225e07a5755050aef383281a | No verificada | NO VERIFICABLE — archivos ausentes |
 
 ### Recuento de episodios
@@ -107,7 +107,7 @@ No existe archivo `comando_efectivo.txt`, `comando.txt`, `launcher.json`, `estad
 
 ### Veredicto: INTERRUMPIDA / INSUFICIENTE
 
-- La cinta de cotizaciones tiene 5,782 filas (5,778 válidas/inválidas + 4 faltante), cubriendo desde `received_ms=1795129435337` hasta `1795130031034`.
+- La cinta de cotizaciones tiene 5,815 filas (5,812 cotización + 3 faltante), cubriendo desde `received_ms=1795129435337` hasta `1795130031034`.
 - No hay episodios con `entry_ms` ni `direction` ni `qty` para evaluar.
 - `resultado_operativo.jsonl` está vacío (0 bytes).
 - `resumen.json` y `manifiesto.json` no existen.
